@@ -41,9 +41,7 @@ export default class Body
 
     set (width: Vec2, mass: number): Body
     {
-        this.width.x = width.x;
-        this.width.y = width.y;
-
+        this.width = width;
         this.mass = mass;
 
         if (mass < Number.MAX_VALUE)
