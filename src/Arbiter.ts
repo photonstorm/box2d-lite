@@ -126,7 +126,7 @@ export default class Arbiter
             let rn2 = Vec2.dot(r2, c.normal);
             let normal = body1.invMass + body2.invMass;
 
-            normal += body1.invI * (Vec2.dot(r1, r2) - rn1 * rn1) + body2.invI * (Vec2.dot(r2, r2) - rn2 * rn2);
+            normal += body1.invI * (Vec2.dot(r1, r1) - rn1 * rn1) + body2.invI * (Vec2.dot(r2, r2) - rn2 * rn2);
 
             c.massNormal = 1 / normal;
 
@@ -148,8 +148,8 @@ export default class Arbiter
                 body1.velocity.sub(Vec2.mulSV(body1.invMass, P));
                 body1.angularVelocity -= body1.invI * Vec2.crossVV(r1, P);
 
-                body2.velocity.sub(Vec2.mulSV(body2.invMass, P));
-                body2.angularVelocity -= body2.invI * Vec2.crossVV(r2, P);
+                body2.velocity.add(Vec2.mulSV(body2.invMass, P));
+                body2.angularVelocity += body2.invI * Vec2.crossVV(r2, P);
             }
         }
     }
@@ -178,10 +178,11 @@ export default class Arbiter
             //  Compute normal impulse
             let vn = Vec2.dot(dv, c.normal);
 
-            let dPn = c.massTangent * (-vn + c.bias);
+            let dPn = c.massNormal * (-vn + c.bias);
 
             if (accumulateImpulses)
             {
+                //  Clamp accumulated impulse
                 let Pn0 = c.Pn;
                 c.Pn = Math.max(Pn0 + dPn, 0);
                 dPn = c.Pn - Pn0;
