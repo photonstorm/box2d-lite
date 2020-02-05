@@ -1,22 +1,35 @@
 {
   "name": "phaser-box2d-lite",
   "version": "0.0.1",
-  "description": "",
-  "main": "index.js",
+  "description": "A port of Erin Catto's Box2D Lite to TypeScript",
+  "main": "src/index.js",
   "scripts": {
-    "build": "tsc --build tsconfig.json"
+    "build": "tsc --build tsconfig.json",
+    "examples": "rollup -c rollup.config.js"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/photonstorm/box2d-lite.git"
   },
-  "author": "",
+  "author": "Richard Davey <rich@photonstorm.com> (http://www.photonstorm.com)",
   "license": "MIT",
+  "licenseUrl": "http://www.opensource.org/licenses/mit-license.php",
   "bugs": {
     "url": "https://github.com/photonstorm/box2d-lite/issues"
   },
   "homepage": "https://github.com/photonstorm/box2d-lite#readme",
   "devDependencies": {
+    "@babel/cli": "^7.8.4",
+    "@babel/core": "^7.8.4",
+    "@babel/plugin-proposal-class-properties": "^7.8.3",
+    "@babel/plugin-proposal-numeric-separator": "^7.8.3",
+    "@babel/plugin-proposal-object-rest-spread": "^7.8.3",
+    "@babel/preset-env": "^7.8.4",
+    "@babel/preset-typescript": "^7.8.3",
+    "babel-preset-minify": "^0.5.1",
+    "rollup": "^1.31.0",
+    "rollup-plugin-babel": "^4.3.3",
+    "rollup-plugin-node-resolve": "^5.2.0",
     "typescript": "^3.7.5"
   }
 }

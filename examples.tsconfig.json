@@ -2,10 +2,10 @@
     "compilerOptions": {
       "moduleResolution": "node",
       "target": "esnext",
-      "module": "es2015",
+      "module": "amd",
       "lib": [ "dom", "es5", "es6", "es7", "esnext" ],
       "esModuleInterop": true,
-      "outDir": "./dist",
+      "outDir": "./examples/lib",
       "declaration": true,
       "declarationDir": "./dist",
       "declarationMap": true,
