@@ -1,4 +1,5 @@
 import Body from './Body';
+import Clamp from './math/Clamp';
 import Contact from './Contact';
 import World from './World';
 import Vec2 from './math/Vec2';
@@ -154,6 +155,84 @@ export default class Arbiter
 
     applyImpulse ()
     {
+        let contacts = this.contacts;
+        let numContacts = this.numContacts;
+        let body1 = this.body1;
+        let body2 = this.body2;
+        let accumulateImpulses = this.world.accumulateImpulses;
 
+        for (let i: number = 0; i < numContacts; i++)
+        {
+            let c = contacts[i];
+
+            c.r1 = Vec2.sub(c.position, body1.position);
+            c.r2 = Vec2.sub(c.position, body2.position);
+
+            //  Relative velocity at contact
+            let dv = Vec2.sub(
+                Vec2.sub(Vec2.add(body2.velocity, Vec2.crossSV(body2.angularVelocity, c.r2)), body1.velocity),
+                Vec2.crossSV(body1.angularVelocity, c.r1)
+            );
+
+            //  Compute normal impulse
+            let vn = Vec2.dot(dv, c.normal);
+
+            let dPn = c.massTangent * (-vn + c.bias);
+
+            if (accumulateImpulses)
+            {
+                let Pn0 = c.Pn;
+                c.Pn = Math.max(Pn0 + dPn, 0);
+                dPn = c.Pn - Pn0;
+            }
+            else
+            {
+                dPn = Math.max(dPn, 0);
+            }
+
+            //  Apply contact impulse
+            let Pn = Vec2.mulSV(dPn, c.normal);
+
+            body1.velocity.sub(Vec2.mulSV(body1.invMass, Pn));
+            body1.angularVelocity -= body1.invI * Vec2.crossVV(c.r1, Pn);
+
+            body2.velocity.add(Vec2.mulSV(body2.invMass, Pn));
+            body2.angularVelocity += body2.invI * Vec2.crossVV(c.r2, Pn);
+
+            //  Relative velocity at contact
+            dv = Vec2.sub(
+                Vec2.sub(Vec2.add(body2.velocity, Vec2.crossSV(body2.angularVelocity, c.r2)), body1.velocity),
+                Vec2.crossSV(body1.angularVelocity, c.r1)
+            );
+
+            let tangent = Vec2.crossVS(c.normal, 1);
+            let vt = Vec2.dot(dv, tangent);
+            let dPt = c.massTangent * (-vt);
+
+            if (accumulateImpulses)
+            {
+                // Compute friction impulse
+                let maxPt = this.friction * c.Pn;
+
+                // Clamp friction
+                let oldTangentImpulse = c.Pt;
+                c.Pt = Clamp(oldTangentImpulse + dPt, -maxPt, maxPt);
+                dPt = c.Pt - oldTangentImpulse;
+            }
+            else
+            {
+                let maxPt = this.friction * dPn;
+                dPt = Clamp(dPt, -maxPt, maxPt);
+            }
+
+            // Apply contact impulse
+            let Pt = Vec2.mulSV(dPt, tangent);
+
+            body1.velocity.sub(Vec2.mulSV(body1.invMass, Pt));
+            body1.angularVelocity -= body1.invI * Vec2.crossVV(c.r1, Pt);
+
+            body2.velocity.add(Vec2.mulSV(body2.invMass, Pt));
+            body2.angularVelocity += body2.invI * Vec2.crossVV(c.r2, Pt);
+        }
     }
 }

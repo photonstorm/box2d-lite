@@ -1,4 +1,4 @@
-import Edges from './Edges';
+import Body from './Body';
 
 /**
  * Copyright (c) 2006-2007 Erin Catto http://www.gphysics.com
@@ -13,22 +13,16 @@ import Edges from './Edges';
  * Ported to TypeScript by Richard Davey, 2020.
  */
 
-export default class FeaturePair
+export default class ArbiterKey
 {
-    e: Edges = new Edges();
-    value: number = 0;
+    bodyA: Body;
+    bodyB: Body;
+    value: string;
 
-    flip ()
+    constructor (bodyA: Body, bodyB: Body)
     {
-        const edges = this.e;
-
-        const tempIn = edges.inEdge1;
-        const tempOut = edges.outEdge1;
-
-        edges.inEdge1 = edges.inEdge2;
-        edges.inEdge2 = tempIn;
-
-        edges.outEdge1 = edges.outEdge2;
-        edges.outEdge2 = tempOut;
+        this.bodyA = bodyA;
+        this.bodyB = bodyB;
+        this.value = bodyA.id + ':' + bodyB.id;
     }
 }

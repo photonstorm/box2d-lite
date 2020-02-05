@@ -1,4 +1,5 @@
-import Edges from './Edges';
+import Arbiter from './Arbiter';
+import ArbiterKey from './ArbiterKey';
 
 /**
  * Copyright (c) 2006-2007 Erin Catto http://www.gphysics.com
@@ -13,22 +14,14 @@ import Edges from './Edges';
  * Ported to TypeScript by Richard Davey, 2020.
  */
 
-export default class FeaturePair
+export default class ArbiterPair
 {
-    e: Edges = new Edges();
-    value: number = 0;
+    first: ArbiterKey;
+    second: Arbiter;
 
-    flip ()
+    constructor (key: ArbiterKey, arbiter: Arbiter)
     {
-        const edges = this.e;
-
-        const tempIn = edges.inEdge1;
-        const tempOut = edges.outEdge1;
-
-        edges.inEdge1 = edges.inEdge2;
-        edges.inEdge2 = tempIn;
-
-        edges.outEdge1 = edges.outEdge2;
-        edges.outEdge2 = tempOut;
+        this.first = key;
+        this.second = arbiter;
     }
 }
