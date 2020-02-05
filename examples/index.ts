@@ -1,5 +1,6 @@
 import Body from '../src/Body';
 import CanvasRenderer from '../src/CanvasRenderer';
+import Joint from '../src/Joint';
 import World from '../src/World';
 import Vec2 from '../src/math/Vec2';
 
@@ -14,21 +15,31 @@ floor.position.set(500, 500);
 
 world.addBody(floor);
 
-let box = new Body(new Vec2(30, 30), 5);
+let box;
+let boxPos = new Vec2(170, -150);
+let boxesPerRow = 10;
+let boxesPerCol = 10;
+let boxOffset = 16;
+for (let i = 0; i < boxesPerRow; i++) {
+  for (let j = 0; j < boxesPerCol; j++) {
+    box = new Body(new Vec2(12, 12), 5);
+    box.position.set(boxPos.x + i * boxOffset, boxPos.y + j * boxOffset);
+    box.velocity.y = -50 + j;
+    world.addBody(box);
+  }
+}
 
-box.velocity.y = -20;
-box.position.set(100, 10);
+let support = new Body(new Vec2(25, 25), Number.MAX_VALUE);
+support.position.set(350, 50);
+world.addBody(support);
 
-world.addBody(box);
+let pendulum = new Body(new Vec2(50, 50), 900);
+pendulum.position.set(505, 40);
+world.addBody(pendulum);
 
-window.world = world;
-
-let box2 = new Body(new Vec2(120, 60), 25);
-
-box2.velocity.y = -10;
-box2.position.set(500, 10);
-
-world.addBody(box2);
+let joint = new Joint();
+joint.set(world, support, pendulum, support.position);
+world.addJoint(joint);
 
 let renderer = new CanvasRenderer(document.getElementById('demo') as HTMLCanvasElement);
 

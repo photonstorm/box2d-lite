@@ -211,10 +211,23 @@ class CanvasRenderer {
 
   render(world) {
     var context = this.context;
+    var bodies = world.bodies;
+    var joints = world.joints;
+    var arbiters = world.arbiters;
     context.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-    for (var i = 0; i < world.bodies.length; i++) {
-      this.renderBody(world.bodies[i], context);
+    for (var i = 0; i < bodies.length; i++) {
+      this.renderBody(bodies[i], context);
+    }
+
+    for (var _i = 0; _i < arbiters.length; _i++) {
+      var arbiter = arbiters[_i].second;
+
+      for (var c = 0; c < arbiter.contacts.length; c++) {}
+    }
+
+    for (var _i2 = 0; _i2 < joints.length; _i2++) {
+      this.renderJoint(joints[_i2], context);
     }
   }
 
@@ -241,6 +254,134 @@ class CanvasRenderer {
     ctx.moveTo(x.x, x.y);
     ctx.lineTo(o.x, o.y);
     ctx.stroke();
+  }
+
+  renderContact(contact, ctx) {
+    ctx.beginPath();
+    ctx.arc(contact.position.x, contact.position.y, 2, 0, 2 * Math.PI);
+    ctx.stroke();
+  }
+
+  renderJoint(joint, ctx) {
+    var b1 = joint.body1;
+    var b2 = joint.body2;
+    var R1 = new Mat22(b1.rotation);
+    var R2 = new Mat22(b2.rotation);
+    var x1 = b1.position;
+    var p1 = Vec2.add(x1, Mat22.mulMV(R1, joint.localAnchor1));
+    var x2 = b2.position;
+    var p2 = Vec2.add(x2, Mat22.mulMV(R2, joint.localAnchor2));
+    ctx.beginPath();
+    ctx.moveTo(x1.x, x1.y);
+    ctx.lineTo(p1.x, p1.y);
+    ctx.lineTo(x2.x, x2.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.stroke();
+  }
+
+}
+
+class Joint {
+  constructor() {
+    _defineProperty(this, "M", new Mat22());
+
+    _defineProperty(this, "localAnchor1", new Vec2());
+
+    _defineProperty(this, "localAnchor2", new Vec2());
+
+    _defineProperty(this, "r1", new Vec2());
+
+    _defineProperty(this, "r2", new Vec2());
+
+    _defineProperty(this, "bias", new Vec2());
+
+    _defineProperty(this, "P", new Vec2());
+
+    _defineProperty(this, "world", void 0);
+
+    _defineProperty(this, "body1", void 0);
+
+    _defineProperty(this, "body2", void 0);
+
+    _defineProperty(this, "biasFactor", 0.2);
+
+    _defineProperty(this, "softness", 0);
+  }
+
+  set(world, body1, body2, anchor) {
+    this.world = world;
+    this.body1 = body1;
+    this.body2 = body2;
+    var Rot1 = new Mat22(body1.rotation);
+    var Rot2 = new Mat22(body2.rotation);
+    var Rot1T = Mat22.transpose(Rot1);
+    var Rot2T = Mat22.transpose(Rot2);
+    this.localAnchor1 = Mat22.mulMV(Rot1T, Vec2.sub(anchor, body1.position));
+    this.localAnchor2 = Mat22.mulMV(Rot2T, Vec2.sub(anchor, body2.position));
+  }
+
+  preStep(inverseDelta) {
+    var body1 = this.body1;
+    var body2 = this.body2;
+    var Rot1 = new Mat22(body1.rotation);
+    var Rot2 = new Mat22(body2.rotation);
+    var r1 = Mat22.mulMV(Rot1, this.localAnchor1);
+    var r2 = Mat22.mulMV(Rot2, this.localAnchor2);
+    var K1 = new Mat22();
+    K1.col1.x = body1.invMass + body2.invMass;
+    K1.col1.y = 0;
+    K1.col2.x = 0;
+    K1.col2.y = body1.invMass + body2.invMass;
+    var K2 = new Mat22();
+    K2.col1.x = body1.invI * r1.y * r1.y;
+    K2.col1.y = -body1.invI * r1.x * r1.y;
+    K2.col2.x = -body1.invI * r1.x * r1.y;
+    K2.col2.y = body1.invI * r1.x * r1.x;
+    var K3 = new Mat22();
+    K3.col1.x = body2.invI * r2.y * r2.y;
+    K3.col1.y = -body2.invI * r2.x * r2.y;
+    K3.col2.x = -body2.invI * r2.x * r2.y;
+    K3.col2.y = body2.invI * r2.x * r2.x;
+    var K = Mat22.add(Mat22.add(K1, K2), K3);
+    K.col1.x += this.softness;
+    K.col2.y += this.softness;
+    this.M = Mat22.invert(K);
+    var p1 = Vec2.add(body1.position, r1);
+    var p2 = Vec2.add(body2.position, r2);
+    var dp = Vec2.sub(p2, p1);
+
+    if (this.world.positionCorrection) {
+      this.bias = Vec2.mulSV(-this.biasFactor, Vec2.mulSV(inverseDelta, dp));
+    } else {
+      this.bias.set(0, 0);
+    }
+
+    if (this.world.warmStarting) {
+      body1.velocity.sub(Vec2.mulSV(body1.invMass, this.P));
+      body1.angularVelocity -= body1.invI * Vec2.crossVV(r1, this.P);
+      body2.velocity.add(Vec2.mulSV(body2.invMass, this.P));
+      body2.angularVelocity += body2.invI * Vec2.crossVV(r2, this.P);
+    } else {
+      this.P.set(0, 0);
+    }
+
+    this.r1 = r1;
+    this.r2 = r2;
+  }
+
+  applyImpulse() {
+    var body1 = this.body1;
+    var body2 = this.body2;
+    var r1 = this.r1;
+    var r2 = this.r2;
+    var dv = Vec2.sub(Vec2.sub(Vec2.add(body2.velocity, Vec2.crossSV(body2.angularVelocity, r2)), body1.velocity), Vec2.crossSV(body1.angularVelocity, r1));
+    var impulse = new Vec2();
+    impulse = Mat22.mulMV(this.M, Vec2.sub(Vec2.sub(this.bias, dv), Vec2.mulSV(this.softness, this.P)));
+    body1.velocity.sub(Vec2.mulSV(body1.invMass, impulse));
+    body1.angularVelocity -= body1.invI * Vec2.crossVV(r1, impulse);
+    body2.velocity.add(Vec2.mulSV(body2.invMass, impulse));
+    body2.angularVelocity += body2.invI * Vec2.crossVV(r2, impulse);
+    this.P.add(impulse);
   }
 
 }
@@ -816,7 +957,8 @@ class World {
     return this;
   }
 
-  addJoint() {
+  addJoint(joint) {
+    this.joints.push(joint);
     return this;
   }
 
@@ -925,15 +1067,30 @@ var world = new World(new Vec2(0, 40), 20);
 var floor = new Body(new Vec2(1000, 80), Number.MAX_VALUE);
 floor.position.set(500, 500);
 world.addBody(floor);
-var box = new Body(new Vec2(30, 30), 5);
-box.velocity.y = -20;
-box.position.set(100, 10);
-world.addBody(box);
-window.world = world;
-var box2 = new Body(new Vec2(120, 60), 25);
-box2.velocity.y = -10;
-box2.position.set(500, 10);
-world.addBody(box2);
+var box;
+var boxPos = new Vec2(170, -150);
+var boxesPerRow = 10;
+var boxesPerCol = 10;
+var boxOffset = 16;
+
+for (var i = 0; i < boxesPerRow; i++) {
+  for (var j = 0; j < boxesPerCol; j++) {
+    box = new Body(new Vec2(12, 12), 5);
+    box.position.set(boxPos.x + i * boxOffset, boxPos.y + j * boxOffset);
+    box.velocity.y = -50 + j;
+    world.addBody(box);
+  }
+}
+
+var support = new Body(new Vec2(25, 25), Number.MAX_VALUE);
+support.position.set(350, 50);
+world.addBody(support);
+var pendulum = new Body(new Vec2(50, 50), 900);
+pendulum.position.set(505, 40);
+world.addBody(pendulum);
+var joint = new Joint();
+joint.set(world, support, pendulum, support.position);
+world.addJoint(joint);
 var renderer = new CanvasRenderer(document.getElementById('demo'));
 
 function loop() {
