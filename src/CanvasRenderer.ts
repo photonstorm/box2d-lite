@@ -2,6 +2,8 @@ import Body from './Body';
 import World from './World';
 import Mat22 from './math/Mat22';
 import Vec2 from './math/Vec2';
+import Joint from './Joint';
+import Contact from './Contact';
 
 export default class CanvasRenderer
 {
@@ -17,29 +19,31 @@ export default class CanvasRenderer
     render (world: World)
     {
         const context = this.context;
+        const bodies = world.bodies;
+        const joints = world.joints;
+        const arbiters = world.arbiters;
 
         context.clearRect(0, 0, this.canvas.width, this.canvas.height);
   
-        for (let i = 0; i < world.bodies.length; i++)
+        for (let i = 0; i < bodies.length; i++)
         {
-            this.renderBody(world.bodies[i], context);
+            this.renderBody(bodies[i], context);
         }
         
-        // let arbitersLen = this.arbiters.length ? this.arbiters.length : 0;
-        // for (let i = 0; i < arbitersLen; ++i) {
-        //   let arbiter = this.arbiters[i].second;
-        //   let contactsLen = arbiter.contacts.length ? arbiter.contacts.length : 0;
-        //   for (let j = 0; j < contactsLen; ++j) {
-        //     let contact = arbiter.contacts[j];
-        //     contact.render(ctx);
-        //   }
-        // }
-        
-        // let jointsLen = this.joints.length ? this.joints.length : 0;
-        // for (let i = 0; i < jointsLen; ++i) {
-        //   this.joints[i].render(ctx);
-        // }
-      
+        for (let i = 0; i < arbiters.length; i++)
+        {
+            let arbiter = arbiters[i].second;
+
+            for (let c = 0; c < arbiter.contacts.length; c++)
+            {
+                this.renderContact(arbiter.contacts[c], context);
+            }
+        }
+
+        for (let i = 0; i < joints.length; i++)
+        {
+            this.renderJoint(joints[i], context);
+        }
     }
 
     renderBody (body: Body, ctx: CanvasRenderingContext2D)
@@ -75,6 +79,35 @@ export default class CanvasRenderer
         ctx.beginPath();
         ctx.moveTo(x.x, x.y);
         ctx.lineTo(o.x, o.y);
+        ctx.stroke();
+    }
+
+    renderContact (contact: Contact, ctx: CanvasRenderingContext2D)
+    {
+        ctx.beginPath();
+        ctx.arc(contact.position.x, contact.position.y, 2, 0, 2 * Math.PI);
+        ctx.stroke();
+    }
+
+    renderJoint (joint: Joint, ctx: CanvasRenderingContext2D)
+    {
+        let b1 = joint.body1;
+        let b2 = joint.body2;
+      
+        let R1 = new Mat22(b1.rotation);
+        let R2 = new Mat22(b2.rotation);
+        
+        let x1 = b1.position;
+        let p1 = Vec2.add(x1, Mat22.mulMV(R1, joint.localAnchor1));
+      
+        let x2 = b2.position;
+        let p2 = Vec2.add(x2, Mat22.mulMV(R2, joint.localAnchor2));
+        
+        ctx.beginPath();
+        ctx.moveTo(x1.x, x1.y);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.lineTo(x2.x, x2.y);
+        ctx.lineTo(p2.x, p2.y);
         ctx.stroke();
     }
 }
