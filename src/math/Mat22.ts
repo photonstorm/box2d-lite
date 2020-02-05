@@ -62,14 +62,14 @@ export default class Mat22
       
     static invert (m: Mat22): Mat22
     {
-        const a = m.col1.x;
-        const b = m.col2.x;
-        const c = m.col1.y;
-        const d = m.col2.y;
+        const a: number = m.col1.x;
+        const b: number = m.col2.x;
+        const c: number = m.col1.y;
+        const d: number = m.col2.y;
 
-        const adjugate = new Mat22();
+        const adjugate: Mat22 = new Mat22();
 
-        let det = a * d - b * c;
+        let det: number = a * d - b * c;
 
         //  1 / determinant, multiplied by adjugate matrix
         det = 1 / det;

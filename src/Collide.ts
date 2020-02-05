@@ -48,9 +48,9 @@ export default function Collide (contacts: Contact[], bodyA: Body, bodyB: Body):
     let RotAT = Mat22.transpose(RotA);
     let RotBT = Mat22.transpose(RotB);
 
-    let dp = Vec2.sub(posB, posA);   // Vec2
-    let dA = Mat22.mulMV(RotAT, dp); // Vec2
-    let dB = Mat22.mulMV(RotBT, dp); // Vec2
+    let dp: Vec2 = Vec2.sub(posB, posA);
+    let dA: Vec2 = Mat22.mulMV(RotAT, dp);
+    let dB: Vec2 = Mat22.mulMV(RotBT, dp);
 
     let C = Mat22.mulMM(RotAT, RotB);
     let absC = Mat22.abs(C);
@@ -73,14 +73,12 @@ export default function Collide (contacts: Contact[], bodyA: Body, bodyB: Body):
     }
 
     //  Find best axis
-    let axis;       // Axis enum
-    let separation; // number
-    let normal;     // Vec2
 
     // Box A faces
-    axis = Axis.FACE_A_X;
-    separation = faceA.x;
-    normal = dA.x > 0 ? RotA.col1 : Vec2.neg(RotA.col1);
+
+    let axis: Axis = Axis.FACE_A_X;
+    let separation: number = faceA.x;
+    let normal: Vec2 = (dA.x > 0) ? RotA.col1 : Vec2.neg(RotA.col1);
 
     const RELATIVE_TOL = 0.95;
     const ABSOLUTE_TOL = 0.01;
