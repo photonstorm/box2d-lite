@@ -1,5 +1,6 @@
 import Body from './Body';
 import Clamp from './math/Clamp';
+import Collide from './Collide';
 import Contact from './Contact';
 import World from './World';
 import Vec2 from './math/Vec2';
@@ -43,7 +44,7 @@ export default class Arbiter
 
         this.contacts = [];
 
-        // this.numContacts = collide(this.contacts, this.body1, this.body2);
+        this.numContacts = Collide(this.contacts, this.body1, this.body2);
 
         this.friction = Math.sqrt(this.body1.friction * this.body2.friction);
     }
