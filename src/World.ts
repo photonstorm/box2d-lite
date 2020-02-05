@@ -3,6 +3,7 @@ import ArbiterKey from './ArbiterKey';
 import ArbiterPair from './ArbiterPair';
 import Body from './Body';
 import Vec2 from './math/Vec2';
+import Joint from './Joint';
 
 /**
  * Copyright (c) 2006-2007 Erin Catto http://www.gphysics.com
@@ -21,7 +22,7 @@ export default class World
 {
     bodyIdSeed: number = 0;
     bodies: Body[] = [];
-    joints = [];
+    joints: Joint[] = [];
     arbiters: ArbiterPair[] = [];
     gravity: Vec2 = new Vec2();
     iterations: number = 10;
@@ -48,8 +49,10 @@ export default class World
         return this;
     }
 
-    addJoint (): World
+    addJoint (joint: Joint): World
     {
+        this.joints.push(joint);
+
         return this;
     }
 
@@ -187,6 +190,4 @@ export default class World
             body.torque = 0;
         }
     }
-
-
 }
