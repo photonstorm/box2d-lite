@@ -15,8 +15,16 @@ import { EdgeNumbers } from './EdgeNumbers';
 
 export default class Edges
 {
-    inEdge1: EdgeNumbers = EdgeNumbers.NO_EDGE;
-    outEdge1: EdgeNumbers = EdgeNumbers.NO_EDGE;
-    inEdge2: EdgeNumbers = EdgeNumbers.NO_EDGE;
-    outEdge2: EdgeNumbers = EdgeNumbers.NO_EDGE;
+    inEdge1: EdgeNumbers;
+    outEdge1: EdgeNumbers;
+    inEdge2: EdgeNumbers;
+    outEdge2: EdgeNumbers;
+
+    constructor ()
+    {
+        this.inEdge1 = EdgeNumbers.NO_EDGE;
+        this.outEdge1 = EdgeNumbers.NO_EDGE;
+        this.inEdge2 = EdgeNumbers.NO_EDGE;
+        this.outEdge2 = EdgeNumbers.NO_EDGE;
+    }
 }

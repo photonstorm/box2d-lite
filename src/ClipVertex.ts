@@ -16,6 +16,12 @@ import FeaturePair from './FeaturePair';
 
  export default class ClipVertex
 {
-    v: Vec2 = new Vec2();
-    fp: FeaturePair = new FeaturePair();
+    v: Vec2;
+    fp: FeaturePair;
+
+    constructor ()
+    {
+        this.v = new Vec2();
+        this.fp = new FeaturePair();
+    }
 }

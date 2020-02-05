@@ -16,20 +16,32 @@ import Vec2 from './math/Vec2';
 
 export default class Contact
 {
-    position: Vec2 = new Vec2();
-    normal: Vec2 = new Vec2();
-    r1: Vec2 = new Vec2();
-    r2: Vec2 = new Vec2();
-    separation: number = 0;
-    Pn: number = 0;         // accumulated normal impulse
-    Pt: number = 0;	        // accumulated tangent impulse
-    Pnb: number = 0;        // accumulated normal impulse for position bias
-    massNormal: number = 0;
-    massTangent: number = 0;
-    bias: number = 0;
-    feature: FeaturePair = new FeaturePair();
+    position: Vec2;
+    normal: Vec2;
+    r1: Vec2;
+    r2: Vec2;
+    separation: number;
+    Pn: number;         // accumulated normal impulse
+    Pt: number;	        // accumulated tangent impulse
+    Pnb: number;        // accumulated normal impulse for position bias
+    massNormal: number;
+    massTangent: number;
+    bias: number;
+    feature: FeaturePair;
 
     constructor ()
     {
+        this.position = new Vec2();
+        this.normal = new Vec2();
+        this.r1 = new Vec2();
+        this.r2 = new Vec2();
+        this.separation = 0;
+        this.Pn = 0;
+        this.Pt = 0;
+        this.Pnb = 0;
+        this.massNormal = 0;
+        this.massTangent = 0;
+        this.bias = 0;
+        this.feature = new FeaturePair();
     }
 }

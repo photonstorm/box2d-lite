@@ -15,8 +15,14 @@ import Edges from './Edges';
 
 export default class FeaturePair
 {
-    e: Edges = new Edges();
-    value: number = 0;
+    e: Edges;
+    value: number;
+
+    constructor ()
+    {
+        this.e = new Edges();
+        this.value = 0;
+    }
 
     flip ()
     {
