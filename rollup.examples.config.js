@@ -7,11 +7,11 @@ const extensions = [
 
 export default {
 
-    input: './src/index.ts',
+    input: './examples/index.ts',
 
     output: {
-        file: './dist/Box2DLite.js',
-        format: 'es'
+        file: './examples/index.js',
+        format: 'esm'
     },
 
     plugins: [

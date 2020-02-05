@@ -4,8 +4,8 @@
   "description": "A port of Erin Catto's Box2D Lite to TypeScript",
   "main": "src/index.js",
   "scripts": {
-    "build": "tsc --build tsconfig.json",
-    "examples": "rollup -c rollup.config.js"
+    "build": "rollup -c rollup.config.js",
+    "examples": "rollup -c rollup.examples.config.js"
   },
   "repository": {
     "type": "git",
