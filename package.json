@@ -1,0 +1,22 @@
+{
+  "name": "phaser-box2d-lite",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc --build tsconfig.json"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/photonstorm/box2d-lite.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/photonstorm/box2d-lite/issues"
+  },
+  "homepage": "https://github.com/photonstorm/box2d-lite#readme",
+  "devDependencies": {
+    "typescript": "^3.7.5"
+  }
+}
