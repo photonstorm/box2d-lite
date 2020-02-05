@@ -11,7 +11,7 @@
  * Ported to TypeScript by Richard Davey, 2020.
  */
 
- export enum EdgeNumbers
+export enum EdgeNumbers
 {
     NO_EDGE = 0,
     EDGE1 = 1,
