@@ -26,38 +26,30 @@ export default class Vec2
     {
         this.x = x;
         this.y = y;
-
-        return this;
     }
 
     add (v: Vec2)
     {
         this.x += v.x;
         this.y += v.y;
-
-        return this;
     }
 
     sub (v: Vec2)
     {
         this.x -= v.x;
         this.y -= v.y;
-
-        return this;
     }
 
     mul (s: number)
     {
         this.x *= s;
         this.y *= s;
-
-        return this;
     }
 
-    length (): number
-    {
-        return Math.sqrt(this.x * this.x + this.y * this.y);
-    }
+    // length (): number
+    // {
+    //     return Math.sqrt(this.x * this.x + this.y * this.y);
+    // }
 
     static add (vA: Vec2, vB: Vec2): Vec2
     {
