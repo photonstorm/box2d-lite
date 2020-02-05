@@ -71,7 +71,7 @@ export default class World
         let length = bodies.length;
         let arbiters = this.arbiters;
 
-        for (let i: number = 0; i < length; i++)
+        for (let i: number = 0; i < length - 1; i++)
         {
             let bodyA: Body = bodies[i];
 
@@ -79,7 +79,7 @@ export default class World
             {
                 let bodyB: Body = bodies[j];
 
-                if (bodyA.invMass === 0 && bodyB.invI === 0)
+                if (bodyA.invMass === 0 && bodyB.invMass === 0)
                 {
                     continue;
                 }
