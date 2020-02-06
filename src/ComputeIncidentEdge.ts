@@ -33,19 +33,24 @@ export default function ComputeIncidentEdge (c: ClipVertex[], h: Vec2, pos: Vec2
     //     -(RotT.c * normalX + RotT.d * normalY)
     // );
 
-    let n: Vec2 = new Vec2(
-        -(invA * normalX + invB * normalY),
-        -(invC * normalX + invD * normalY)
-    );
+    // let n: Vec2 = new Vec2(
+    //     -(invA * normalX + invB * normalY),
+    //     -(invC * normalX + invD * normalY)
+    // );
 
-    let nAbs: Vec2 = Vec2.abs(n);
+    const nX: number = -(invA * normalX + invB * normalY);
+    const nY: number = -(invC * normalX + invD * normalY);
+    const absX: number = Math.abs(nX);
+    const absY: number = Math.abs(nY);
+
+    // let nAbs: Vec2 = Vec2.abs(n);
 
     const clipVertex0: ClipVertex = new ClipVertex();
     const clipVertex1: ClipVertex = new ClipVertex();
 
-    if (nAbs.x > nAbs.y)
+    if (absX > absY)
     {
-        if (Math.sign(n.x) > 0)
+        if (Math.sign(nX) > 0)
         {
             clipVertex0.v.set(h.x, -h.y);
             clipVertex0.fp.e.inEdge2 = EdgeNumbers.EDGE3;
@@ -68,7 +73,7 @@ export default function ComputeIncidentEdge (c: ClipVertex[], h: Vec2, pos: Vec2
     }
     else
     {
-        if (Math.sign(n.y) > 0)
+        if (Math.sign(nY) > 0)
         {
             clipVertex0.v.set(h.x, h.y);
             clipVertex0.fp.e.inEdge2 = EdgeNumbers.EDGE4;
