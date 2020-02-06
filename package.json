@@ -20,6 +20,7 @@
   "homepage": "https://github.com/photonstorm/box2d-lite#readme",
   "devDependencies": {
     "rollup": "^1.31.0",
+    "rollup-plugin-terser": "^5.2.0",
     "rollup-plugin-typescript2": "^0.25.3",
     "typescript": "^3.7.5"
   }
