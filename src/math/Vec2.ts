@@ -98,6 +98,11 @@ export default class Vec2
         return vA.x * vB.y - vA.y * vB.x;
     }
 
+    static crossVXY (vA: Vec2, x: number, y: number): number
+    {
+        return vA.x * y - vA.y * x;
+    }
+
     static crossVS (v: Vec2, s: number): Vec2
     {
         return new Vec2(s * v.y, -s * v.x);
