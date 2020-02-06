@@ -62,6 +62,28 @@ document.getElementById('pause').addEventListener('click', () => {
 
 });
 
+function showStepStats (text)
+{
+    const debug = [
+        '1)',
+        window['step1'],
+        '2)',
+        window['step2'],
+        '3)',
+        window['step3'],
+        '4)',
+        window['step4'],
+        '5)',
+        window['step5'],
+        '6)',
+        window['step6'],
+        '7)',
+        window['step7']
+    ];
+
+    text.value = debug.join(' ');
+}
+
 function loop ()
 {
     window['vec2Total'] = 0;
@@ -79,10 +101,12 @@ function loop ()
 
         if (frame === 200)
         {
+            // showStepStats(frame200Text);
             frame200Text.value = 'vec2: ' + vec2Text.value + ' mat22: ' + mat22Text.value + ' arbiters: ' + world.arbiters.length + ' bodies: ' + world.bodies.length;
         }
         else if (frame === 600)
         {
+            // showStepStats(frame600Text);
             frame600Text.value = 'vec2: ' + vec2Text.value + ' mat22: ' + mat22Text.value + ' arbiters: ' + world.arbiters.length + ' bodies: ' + world.bodies.length;
         }
 
