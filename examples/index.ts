@@ -53,6 +53,8 @@ let frame = 0;
 let frameText = document.getElementById('frame') as HTMLFormElement;
 let vec2Text = document.getElementById('vec2') as HTMLFormElement;
 let mat22Text = document.getElementById('mat22') as HTMLFormElement;
+let frame200Text = document.getElementById('frame200') as HTMLFormElement;
+let frame600Text = document.getElementById('frame600') as HTMLFormElement;
 
 document.getElementById('pause').addEventListener('click', () => {
 
@@ -71,11 +73,20 @@ function loop ()
 
         renderer.render(world);
 
-        frame++;
-
         frameText.value = frame.toString();
         vec2Text.value = window['vec2Total'].toString();
         mat22Text.value = window['mat22Total'].toString();
+
+        if (frame === 200)
+        {
+            frame200Text.value = vec2Text.value;
+        }
+        else if (frame === 600)
+        {
+            frame600Text.value = vec2Text.value;
+        }
+
+        frame++;
     }
 
     requestAnimationFrame(loop);

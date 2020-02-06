@@ -53,6 +53,12 @@ class Vec2 {
     static dot(vA, vB) {
         return vA.x * vB.x + vA.y * vB.y;
     }
+    static dotXYV(x, y, vB) {
+        return x * vB.x + y * vB.y;
+    }
+    static dotXY(xA, yA, xB, yB) {
+        return xA * xB + yA * yB;
+    }
     static crossVV(vA, vB) {
         return vA.x * vB.y - vA.y * vB.x;
     }
@@ -518,11 +524,11 @@ class ClipVertex {
  *
  * Ported to TypeScript by Richard Davey, 2020.
  */
-function ComputeIncidentEdge(c, h, pos, Rot, normal) {
+function ComputeIncidentEdge(c, h, pos, Rot, normalX, normalY) {
     //  The normal is from the reference box
     //  Convert it to the incident box frame and flip sign
     let RotT = Mat22.transpose(Rot);
-    let n = Vec2.neg(Mat22.mulMV(RotT, normal));
+    let n = new Vec2(-(RotT.a * normalX + RotT.b * normalY), -(RotT.c * normalX + RotT.d * normalY));
     let nAbs = Vec2.abs(n);
     const clipVertex0 = new ClipVertex();
     const clipVertex1 = new ClipVertex();
@@ -562,8 +568,17 @@ function ComputeIncidentEdge(c, h, pos, Rot, normal) {
             clipVertex1.fp.e.outEdge2 = EdgeNumbers.EDGE4;
         }
     }
-    clipVertex0.v = Vec2.add(pos, Mat22.mulMV(Rot, clipVertex0.v));
-    clipVertex1.v = Vec2.add(pos, Mat22.mulMV(Rot, clipVertex1.v));
+    // clipVertex0.v = Vec2.add(pos, Mat22.mulMV(Rot, clipVertex0.v));
+    // clipVertex1.v = Vec2.add(pos, Mat22.mulMV(Rot, clipVertex1.v));
+    //  inline:
+    const v0 = clipVertex0.v;
+    const v1 = clipVertex1.v;
+    let mx = pos.x + (Rot.a * v0.x + Rot.b * v0.y);
+    let my = pos.y + (Rot.c * v0.x + Rot.d * v0.y);
+    v0.set(mx, my);
+    mx = pos.x + (Rot.a * v1.x + Rot.b * v1.y);
+    my = pos.y + (Rot.c * v1.x + Rot.d * v1.y);
+    v1.set(mx, my);
     c[0] = clipVertex0;
     c[1] = clipVertex1;
 }
@@ -609,12 +624,12 @@ class Contact {
  *
  * Ported to TypeScript by Richard Davey, 2020.
  */
-function ClipSegmentToLine(vOut, vIn, normal, offset, clipEdge) {
+function ClipSegmentToLine(vOut, vIn, normalX, normalY, offset, clipEdge) {
     //  Start with no output points
     let numOut = 0;
     // Calculate the distance of end points to the line
-    let distance0 = Vec2.dot(normal, vIn[0].v) - offset;
-    let distance1 = Vec2.dot(normal, vIn[1].v) - offset;
+    let distance0 = Vec2.dotXYV(normalX, normalY, vIn[0].v) - offset;
+    let distance1 = Vec2.dotXYV(normalX, normalY, vIn[1].v) - offset;
     // If the points are behind the plane
     if (distance0 <= 0) {
         vOut[numOut] = vIn[0];
@@ -628,18 +643,22 @@ function ClipSegmentToLine(vOut, vIn, normal, offset, clipEdge) {
     if (distance0 * distance1 < 0) {
         // Find intersection point of edge and plane
         let interp = distance0 / (distance0 - distance1);
-        vOut[numOut] = new ClipVertex();
-        vOut[numOut].v = Vec2.add(vIn[0].v, Vec2.mulSV(interp, Vec2.sub(vIn[1].v, vIn[0].v)));
+        let clip = new ClipVertex();
+        //  This single line creates 3 vec2s into a newly created vec2!
+        // clip.v = Vec2.add(vIn[0].v, Vec2.mulSV(interp, Vec2.sub(vIn[1].v, vIn[0].v)));
+        //  This saves 189 vec2 creations per frame:
+        clip.v.set(vIn[0].v.x + (interp * (vIn[1].v.x - vIn[0].v.x)), vIn[0].v.y + (interp * (vIn[1].v.y - vIn[0].v.y)));
         if (distance0 > 0) {
-            vOut[numOut].fp = vIn[0].fp;
-            vOut[numOut].fp.e.inEdge1 = clipEdge;
-            vOut[numOut].fp.e.inEdge2 = EdgeNumbers.NO_EDGE;
+            clip.fp = vIn[0].fp;
+            clip.fp.e.inEdge1 = clipEdge;
+            clip.fp.e.inEdge2 = EdgeNumbers.NO_EDGE;
         }
         else {
-            vOut[numOut].fp = vIn[1].fp;
-            vOut[numOut].fp.e.outEdge1 = clipEdge;
-            vOut[numOut].fp.e.outEdge2 = EdgeNumbers.NO_EDGE;
+            clip.fp = vIn[1].fp;
+            clip.fp.e.outEdge1 = clipEdge;
+            clip.fp.e.outEdge2 = EdgeNumbers.NO_EDGE;
         }
+        vOut[numOut] = clip;
         numOut++;
     }
     return numOut;
@@ -668,6 +687,106 @@ function ClipSegmentToLine(vOut, vIn, normal, offset, clipEdge) {
 //    |        |
 //   v3 ------ v4
 //        e3
+function computeFaceAX(posA, posB, RotA, RotB, hA, hB, frontNormalX, frontNormalY, clipPoints2) {
+    let front = Vec2.dotXYV(frontNormalX, frontNormalY, posA) + hA.x;
+    let sideNormalX = RotA.b;
+    let sideNormalY = RotA.d;
+    let side = Vec2.dotXYV(sideNormalX, sideNormalY, posA);
+    let negSide = -side + hA.y;
+    let posSide = side + hA.y;
+    //  The results get stored in this incidentEdge array
+    let incidentEdge = [];
+    ComputeIncidentEdge(incidentEdge, hB, posB, RotB, frontNormalX, frontNormalY);
+    //  Clip other face with 5 box planes (1 face plane, 4 edge planes)
+    let clipPoints1 = [];
+    //  Clip to box side 1
+    let np = ClipSegmentToLine(clipPoints1, incidentEdge, -sideNormalX, -sideNormalY, negSide, EdgeNumbers.EDGE3);
+    if (np < 2) {
+        return null;
+    }
+    //  Clip to negative box side 1
+    np = ClipSegmentToLine(clipPoints2, clipPoints1, sideNormalX, sideNormalY, posSide, EdgeNumbers.EDGE1);
+    if (np < 2) {
+        return null;
+    }
+    //  The contact separation section needs:
+    return front;
+}
+function computeFaceAY(posA, posB, RotA, RotB, hA, hB, frontNormalX, frontNormalY, clipPoints2) {
+    let front = Vec2.dotXYV(frontNormalX, frontNormalY, posA) + hA.y;
+    let sideNormalX = RotA.a;
+    let sideNormalY = RotA.c;
+    let side = Vec2.dotXYV(sideNormalX, sideNormalY, posA);
+    let negSide = -side + hA.x;
+    let posSide = side + hA.x;
+    //  The results get stored in this incidentEdge array
+    let incidentEdge = [];
+    ComputeIncidentEdge(incidentEdge, hB, posB, RotB, frontNormalX, frontNormalY);
+    //  Clip other face with 5 box planes (1 face plane, 4 edge planes)
+    let clipPoints1 = [];
+    //  Clip to box side 1
+    let np = ClipSegmentToLine(clipPoints1, incidentEdge, -sideNormalX, -sideNormalY, negSide, EdgeNumbers.EDGE2);
+    if (np < 2) {
+        return null;
+    }
+    //  Clip to negative box side 1
+    np = ClipSegmentToLine(clipPoints2, clipPoints1, sideNormalX, sideNormalY, posSide, EdgeNumbers.EDGE4);
+    if (np < 2) {
+        return null;
+    }
+    //  The contact separation section needs:
+    return front;
+}
+function computeFaceBX(posA, posB, RotA, RotB, hA, hB, frontNormalX, frontNormalY, clipPoints2) {
+    let front = Vec2.dotXYV(frontNormalX, frontNormalY, posB) + hB.x;
+    let sideNormalX = RotB.b;
+    let sideNormalY = RotB.d;
+    let side = Vec2.dotXYV(sideNormalX, sideNormalY, posB);
+    let negSide = -side + hB.y;
+    let posSide = side + hB.y;
+    //  The results get stored in this incidentEdge array
+    let incidentEdge = [];
+    ComputeIncidentEdge(incidentEdge, hA, posA, RotA, frontNormalX, frontNormalY);
+    //  Clip other face with 5 box planes (1 face plane, 4 edge planes)
+    let clipPoints1 = [];
+    //  Clip to box side 1
+    let np = ClipSegmentToLine(clipPoints1, incidentEdge, -sideNormalX, -sideNormalY, negSide, EdgeNumbers.EDGE3);
+    if (np < 2) {
+        return null;
+    }
+    //  Clip to negative box side 1
+    np = ClipSegmentToLine(clipPoints2, clipPoints1, sideNormalX, sideNormalY, posSide, EdgeNumbers.EDGE1);
+    if (np < 2) {
+        return null;
+    }
+    //  The contact separation section needs:
+    return front;
+}
+function computeFaceBY(posA, posB, RotA, RotB, hA, hB, frontNormalX, frontNormalY, clipPoints2) {
+    let front = Vec2.dotXYV(frontNormalX, frontNormalY, posB) + hB.y;
+    let sideNormalX = RotB.a;
+    let sideNormalY = RotB.c;
+    let side = Vec2.dotXYV(sideNormalX, sideNormalY, posB);
+    let negSide = -side + hB.x;
+    let posSide = side + hB.x;
+    //  The results get stored in this incidentEdge array
+    let incidentEdge = [];
+    ComputeIncidentEdge(incidentEdge, hA, posA, RotA, frontNormalX, frontNormalY);
+    //  Clip other face with 5 box planes (1 face plane, 4 edge planes)
+    let clipPoints1 = [];
+    //  Clip to box side 1
+    let np = ClipSegmentToLine(clipPoints1, incidentEdge, -sideNormalX, -sideNormalY, negSide, EdgeNumbers.EDGE2);
+    if (np < 2) {
+        return null;
+    }
+    //  Clip to negative box side 1
+    np = ClipSegmentToLine(clipPoints2, clipPoints1, sideNormalX, sideNormalY, posSide, EdgeNumbers.EDGE4);
+    if (np < 2) {
+        return null;
+    }
+    //  The contact separation section needs:
+    return front;
+}
 function Collide(contacts, bodyA, bodyB) {
     // Setup
     let hA = Vec2.mulSV(0.5, bodyA.width); // half the width of bodyA
@@ -698,107 +817,92 @@ function Collide(contacts, bodyA, bodyB) {
     // Box A faces
     let axis = Axis.FACE_A_X;
     let separation = faceA.x;
-    let normal = (dA.x > 0) ? RotA.col1 : Vec2.neg(RotA.col1);
+    // let normal: Vec2 = (dA.x > 0) ? RotA.col1 : Vec2.neg(RotA.col1);
+    let normalX = 0;
+    let normalY = 0;
+    if (dA.x > 0) {
+        normalX = RotA.a;
+        normalY = RotA.c;
+    }
+    else {
+        normalX = -RotA.a;
+        normalY = -RotA.c;
+    }
     const RELATIVE_TOL = 0.95;
     const ABSOLUTE_TOL = 0.01;
     if (faceA.y > RELATIVE_TOL * separation + ABSOLUTE_TOL * hA.y) {
         axis = Axis.FACE_A_Y;
         separation = faceA.y;
-        normal = (dA.y > 0) ? RotA.col2 : Vec2.neg(RotA.col2);
+        if (dA.y > 0) {
+            normalX = RotA.b;
+            normalY = RotA.d;
+        }
+        else {
+            normalX = -RotA.b;
+            normalY = -RotA.d;
+        }
     }
     // Box B faces
     if (faceB.x > RELATIVE_TOL * separation + ABSOLUTE_TOL * hB.x) {
         axis = Axis.FACE_B_X;
         separation = faceB.x;
-        normal = (dB.x > 0) ? RotB.col1 : Vec2.neg(RotB.col1);
+        if (dB.x > 0) {
+            normalX = RotB.a;
+            normalY = RotB.c;
+        }
+        else {
+            normalX = -RotB.a;
+            normalY = -RotB.c;
+        }
     }
     if (faceB.y > RELATIVE_TOL * separation + ABSOLUTE_TOL * hB.y) {
         axis = Axis.FACE_B_Y;
         separation = faceB.y;
-        normal = (dB.y > 0) ? RotB.col2 : Vec2.neg(RotB.col2);
+        if (dB.y > 0) {
+            normalX = RotB.b;
+            normalY = RotB.d;
+        }
+        else {
+            normalX = -RotB.b;
+            normalY = -RotB.d;
+        }
     }
     //  Setup clipping plane data based on the separating axis
-    let frontNormal;
-    let sideNormal;
-    let incidentEdge = [];
-    let front;
-    let negSide;
-    let posSide;
-    let negEdge;
-    let posEdge;
-    let side;
     //  Compute the clipping lines and the line segment to be clipped.
-    switch (axis) {
-        case Axis.FACE_A_X:
-            frontNormal = normal;
-            front = Vec2.dot(posA, frontNormal) + hA.x;
-            sideNormal = RotA.col2;
-            side = Vec2.dot(posA, sideNormal);
-            negSide = -side + hA.y;
-            posSide = side + hA.y;
-            negEdge = EdgeNumbers.EDGE3;
-            posEdge = EdgeNumbers.EDGE1;
-            ComputeIncidentEdge(incidentEdge, hB, posB, RotB, frontNormal);
-            break;
-        case Axis.FACE_A_Y:
-            frontNormal = normal;
-            front = Vec2.dot(posA, frontNormal) + hA.y;
-            sideNormal = RotA.col1;
-            side = Vec2.dot(posA, sideNormal);
-            negSide = -side + hA.x;
-            posSide = side + hA.x;
-            negEdge = EdgeNumbers.EDGE2;
-            posEdge = EdgeNumbers.EDGE4;
-            ComputeIncidentEdge(incidentEdge, hB, posB, RotB, frontNormal);
-            break;
-        case Axis.FACE_B_X:
-            frontNormal = Vec2.neg(normal);
-            front = Vec2.dot(posB, frontNormal) + hB.x;
-            sideNormal = RotB.col2;
-            side = Vec2.dot(posB, sideNormal);
-            negSide = -side + hB.y;
-            posSide = side + hB.y;
-            negEdge = EdgeNumbers.EDGE3;
-            posEdge = EdgeNumbers.EDGE1;
-            ComputeIncidentEdge(incidentEdge, hA, posA, RotA, frontNormal);
-            break;
-        case Axis.FACE_B_Y:
-            frontNormal = Vec2.neg(normal);
-            front = Vec2.dot(posB, frontNormal) + hB.y;
-            sideNormal = RotB.col1;
-            side = Vec2.dot(posB, sideNormal);
-            negSide = -side + hB.x;
-            posSide = side + hB.x;
-            negEdge = EdgeNumbers.EDGE2;
-            posEdge = EdgeNumbers.EDGE4;
-            ComputeIncidentEdge(incidentEdge, hA, posA, RotA, frontNormal);
-            break;
+    let frontNormalX = normalX;
+    let frontNormalY = normalY;
+    let clipPoints = [];
+    let front = null;
+    if (axis === Axis.FACE_A_X) {
+        front = computeFaceAX(posA, posB, RotA, RotB, hA, hB, frontNormalX, frontNormalY, clipPoints);
     }
-    //  Clip other face with 5 box planes (1 face plane, 4 edge planes)
-    let clipPoints1 = [];
-    let clipPoints2 = [];
-    //  Clip to box side 1
-    let np = ClipSegmentToLine(clipPoints1, incidentEdge, Vec2.neg(sideNormal), negSide, negEdge);
-    if (np < 2) {
+    else if (axis === Axis.FACE_A_Y) {
+        front = computeFaceAY(posA, posB, RotA, RotB, hA, hB, frontNormalX, frontNormalY, clipPoints);
+    }
+    else if (axis === Axis.FACE_B_X) {
+        frontNormalX = -normalX;
+        frontNormalY = -normalY;
+        front = computeFaceBX(posA, posB, RotA, RotB, hA, hB, frontNormalX, frontNormalY, clipPoints);
+    }
+    else if (axis === Axis.FACE_B_Y) {
+        frontNormalX = -normalX;
+        frontNormalY = -normalY;
+        front = computeFaceBY(posA, posB, RotA, RotB, hA, hB, frontNormalX, frontNormalY, clipPoints);
+    }
+    if (front === null) {
         return 0;
     }
-    //  Clip to negative box side 1
-    np = ClipSegmentToLine(clipPoints2, clipPoints1, sideNormal, posSide, posEdge);
-    if (np < 2) {
-        return 0;
-    }
-    // Now clipPoints2 contains the clipping points.
+    // Now clipPoints contains the clipping points.
     // Due to roundoff, it is possible that clipping removes all points.
     let numContacts = 0;
     for (let i = 0; i < 2; i++) {
-        let separation = Vec2.dot(frontNormal, clipPoints2[i].v) - front;
+        let separation = Vec2.dotXYV(frontNormalX, frontNormalY, clipPoints[i].v) - front;
         if (separation <= 0) {
             contacts[numContacts] = new Contact();
             contacts[numContacts].separation = separation;
-            contacts[numContacts].normal = normal;
-            // slide contact point onto reference face (easy to cull)
-            contacts[numContacts].position = Vec2.sub(clipPoints2[i].v, Vec2.mulSV(separation, frontNormal));
-            contacts[numContacts].feature = clipPoints2[i].fp;
+            contacts[numContacts].normal.set(normalX, normalY);
+            contacts[numContacts].position = new Vec2(clipPoints[i].v.x - (separation * frontNormalX), clipPoints[i].v.y - (separation * frontNormalY));
+            contacts[numContacts].feature = clipPoints[i].fp;
             if (axis === Axis.FACE_B_X || axis === Axis.FACE_B_Y) {
                 contacts[numContacts].feature.flip();
             }
@@ -1164,6 +1268,8 @@ let frame = 0;
 let frameText = document.getElementById('frame');
 let vec2Text = document.getElementById('vec2');
 let mat22Text = document.getElementById('mat22');
+let frame200Text = document.getElementById('frame200');
+let frame600Text = document.getElementById('frame600');
 document.getElementById('pause').addEventListener('click', () => {
     pause = (pause) ? false : true;
 });
@@ -1173,10 +1279,16 @@ function loop() {
     if (!pause) {
         world.step(delta);
         renderer.render(world);
-        frame++;
         frameText.value = frame.toString();
         vec2Text.value = window['vec2Total'].toString();
         mat22Text.value = window['mat22Total'].toString();
+        if (frame === 200) {
+            frame200Text.value = vec2Text.value;
+        }
+        else if (frame === 600) {
+            frame600Text.value = vec2Text.value;
+        }
+        frame++;
     }
     requestAnimationFrame(loop);
 }
