@@ -221,32 +221,17 @@ class CanvasRenderer {
     renderBody(body, ctx) {
         this._M0.set(body.rotation);
         let position = body.position;
-        // let h: Vec2 = Vec2.mulSV(0.5, body.width);
         let hX = 0.5 * body.width.x;
         let hY = 0.5 * body.width.y;
-        // linear and rotational position of vertices
-        // this._v5.set(-hX, -hY);
-        // this._v6.set(hX, -hY);
-        // this._v7.set(hX, hY);
-        // this._v8.set(-hX, hY);
         const v1 = this._v1;
         const v2 = this._v2;
         const v3 = this._v3;
         const v4 = this._v4;
-        // let v1: Vec2 = Vec2.add(position, Mat22.mulMV(this._M0, this._v5));
         v1.set(position.x + (this._M0.a * -hX + this._M0.b * -hY), position.y + (this._M0.c * -hX + this._M0.d * -hY));
-        // let v2: Vec2 = Vec2.add(position, Mat22.mulMV(this._M0, this._v6));
         v2.set(position.x + (this._M0.a * hX + this._M0.b * -hY), position.y + (this._M0.c * hX + this._M0.d * -hY));
-        // let v3: Vec2 = Vec2.add(position, Mat22.mulMV(this._M0, this._v7));
         v3.set(position.x + (this._M0.a * hX + this._M0.b * hY), position.y + (this._M0.c * hX + this._M0.d * hY));
-        // let v4: Vec2 = Vec2.add(position, Mat22.mulMV(this._M0, this._v8));
         v4.set(position.x + (this._M0.a * -hX + this._M0.b * hY), position.y + (this._M0.c * -hX + this._M0.d * hY));
-        // let v1: Vec2 = Vec2.add(x, Mat22.mulMV(this._M0, new Vec2(-h.x, -h.y)));
-        // let v2: Vec2 = Vec2.add(x, Mat22.mulMV(this._M0, new Vec2( h.x, -h.y)));
-        // let v3: Vec2 = Vec2.add(x, Mat22.mulMV(this._M0, new Vec2( h.x,  h.y)));
-        // let v4: Vec2 = Vec2.add(x, Mat22.mulMV(this._M0, new Vec2(-h.x,  h.y)));
         const orientation = this._orientation;
-        // let orientation: Vec2 = Vec2.add(position, Mat22.mulMV(this._M0, new Vec2(hX, 0)));
         orientation.set(position.x + (this._M0.a * hX), position.y + (this._M0.c * hX));
         // draw centroid of rectangle
         ctx.strokeStyle = 'black';
@@ -281,9 +266,6 @@ class CanvasRenderer {
         let position2 = b2.position;
         const p1 = this._v1;
         const p2 = this._v2;
-        // let x2 = b2.position;
-        // let p1 = Vec2.add(x1, Mat22.mulMV(this._M0, joint.localAnchor1));
-        // let p2 = Vec2.add(x2, Mat22.mulMV(this._M1, joint.localAnchor2));
         p1.set(position1.x + (this._M0.a * joint.localAnchor1.x + this._M0.b * joint.localAnchor1.y), position1.y + (this._M0.c * joint.localAnchor1.x + this._M0.d * joint.localAnchor1.y));
         p2.set(position2.x + (this._M1.a * joint.localAnchor2.x + this._M1.b * joint.localAnchor2.y), position2.y + (this._M1.c * joint.localAnchor2.x + this._M1.d * joint.localAnchor2.y));
         ctx.beginPath();
@@ -1285,10 +1267,10 @@ function loop() {
         vec2Text.value = window['vec2Total'].toString();
         mat22Text.value = window['mat22Total'].toString();
         if (frame === 200) {
-            frame200Text.value = vec2Text.value + ' / ' + mat22Text.value;
+            frame200Text.value = 'vec2: ' + vec2Text.value + ' mat22: ' + mat22Text.value + ' arbiters: ' + world.arbiters.length + ' bodies: ' + world.bodies.length;
         }
         else if (frame === 600) {
-            frame600Text.value = vec2Text.value + ' / ' + mat22Text.value;
+            frame600Text.value = 'vec2: ' + vec2Text.value + ' mat22: ' + mat22Text.value + ' arbiters: ' + world.arbiters.length + ' bodies: ' + world.bodies.length;
         }
         frame++;
     }

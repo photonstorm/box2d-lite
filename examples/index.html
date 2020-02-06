@@ -3,24 +3,44 @@
     <head>
         <title>Phaser Box2D Lite</title>
         <style>
+            body {
+                font-family: Verdana, Geneva, Tahoma, sans-serif;
+                font-size: smaller;
+            }
+
+            input[type=text] {
+                background-color: black;
+                color: #00ff00;
+                font-family: 'Courier New', Courier, monospace;
+                border: none;
+                padding: 4px;
+                margin: 1px 0;
+            }
         </style>
     </head>
     <body>
 
-        <button id="pause" style="margin-right: 32px">start</button>
-        frame: 
-        <input type="text" id="frame" value="0" style="width: 80px">
-        vec2:
-        <input type="text" id="vec2" value="0" style="width: 80px">
-        mat22:
-        <input type="text" id="mat22" value="0" style="width: 80px; margin-right: 32px;">
-        frame 200:
-        <input type="text" id="frame200" value="0" style="width: 120px">
-        frame 600:
-        <input type="text" id="frame600" value="0" style="width: 120px">
-        <br />
+        <div style="margin-bottom: 16px;">
+            <button id="pause" style="margin-right: 32px">start</button>
+            frame: 
+            <input type="text" id="frame" value="0" style="width: 80px">
+            vec2:
+            <input type="text" id="vec2" value="0" style="width: 80px">
+            mat22:
+            <input type="text" id="mat22" value="0" style="width: 80px">
+        </div>
 
-        <canvas id="demo" width="800" height="600" style="border: 2px solid darkgray; margin-top: 32px">
+        <div>
+            frame 200:
+            <input type="text" id="frame200" value="0" style="width: 460px">
+        </div>
+
+        <div>
+            frame 600:
+            <input type="text" id="frame600" value="0" style="width: 460px">
+        </div>
+
+        <canvas id="demo" width="800" height="600" style="border: 2px solid darkgray; margin-top: 16px">
 
         <script src="index.js" type="module"></script>
 
