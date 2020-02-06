@@ -16,12 +16,18 @@ import Vec2 from './math/Vec2';
  * Ported to TypeScript by Richard Davey, 2020.
  */
 
-export default function ComputeIncidentEdge (c: ClipVertex[], h: Vec2, pos: Vec2, Rot: Mat22, normal: Vec2): void
+export default function ComputeIncidentEdge (c: ClipVertex[], h: Vec2, pos: Vec2, Rot: Mat22, normalX: number, normalY: number): void
 {
     //  The normal is from the reference box
     //  Convert it to the incident box frame and flip sign
+
     let RotT: Mat22 = Mat22.transpose(Rot);
-    let n: Vec2 = Vec2.neg(Mat22.mulMV(RotT, normal));
+
+    let n: Vec2 = new Vec2(
+        -(RotT.a * normalX + RotT.b * normalY),
+        -(RotT.c * normalX + RotT.d * normalY)
+    );
+
     let nAbs: Vec2 = Vec2.abs(n);
 
     const clipVertex0: ClipVertex = new ClipVertex();
