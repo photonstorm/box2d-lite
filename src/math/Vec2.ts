@@ -13,13 +13,15 @@
 
 export default class Vec2
 {
-    x: number = 0;
-    y: number = 0;
+    x: number;
+    y: number;
 
     constructor (x: number = 0, y: number = 0)
     {
         this.x = x;
         this.y = y;
+
+        window['vec2Total']++;
     }
 
     set (x: number = 0, y: number = 0)
@@ -45,11 +47,6 @@ export default class Vec2
         this.x *= s;
         this.y *= s;
     }
-
-    // length (): number
-    // {
-    //     return Math.sqrt(this.x * this.x + this.y * this.y);
-    // }
 
     static add (vA: Vec2, vB: Vec2): Vec2
     {
@@ -80,11 +77,6 @@ export default class Vec2
     {
         return new Vec2(-v.x, -v.y);
     }
-
-    // static length (v: Vec2): number
-    // {
-    //     return Math.sqrt(v.x * v.x + v.y * v.y);
-    // }
 
     static dot (vA: Vec2, vB: Vec2): number
     {
