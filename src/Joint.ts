@@ -48,8 +48,8 @@ export default class Joint
         this.body1 = body1;
         this.body2 = body2;
 
-        let Rot1 = new Mat22(body1.rotation);
-        let Rot2 = new Mat22(body2.rotation);
+        let Rot1 = new Mat22().set(body1.rotation);
+        let Rot2 = new Mat22().set(body2.rotation);
         let Rot1T = Mat22.transpose(Rot1);
         let Rot2T = Mat22.transpose(Rot2);
 
@@ -64,44 +64,41 @@ export default class Joint
 
         //  Pre-compute anchors, mass matrix and bias
 
-        let Rot1 = new Mat22(body1.rotation);
-        let Rot2 = new Mat22(body2.rotation);
+        let Rot1 = new Mat22().set(body1.rotation);
+        let Rot2 = new Mat22().set(body2.rotation);
 
         let r1 = Mat22.mulMV(Rot1, this.localAnchor1);
         let r2 = Mat22.mulMV(Rot2, this.localAnchor2);
 
         //  Inverse mass matrix
 
-        let K1 = new Mat22();
-
-        K1.col1.x = body1.invMass + body2.invMass;
-        K1.col1.y = 0;
-
-        K1.col2.x = 0;
-        K1.col2.y = body1.invMass + body2.invMass;
+        let K1 = new Mat22(
+            body1.invMass + body2.invMass,
+            0,
+            0,
+            body1.invMass + body2.invMass
+        );
 
         //  body1 rotational mass matrix i.e. moment of inertia
-        let K2 = new Mat22();
-
-        K2.col1.x =  body1.invI * r1.y * r1.y;
-        K2.col1.y = -body1.invI * r1.x * r1.y;
-
-        K2.col2.x = -body1.invI * r1.x * r1.y;
-        K2.col2.y =  body1.invI * r1.x * r1.x;
+        let K2 = new Mat22(
+            body1.invI * r1.y * r1.y,
+            -body1.invI * r1.x * r1.y,
+            -body1.invI * r1.x * r1.y,
+            body1.invI * r1.x * r1.x
+        );
 
         //  body2 rotational mass matrix i.e. moment of inertia
-        let K3 = new Mat22();
-
-        K3.col1.x =  body2.invI * r2.y * r2.y;
-        K3.col1.y = -body2.invI * r2.x * r2.y;
-
-        K3.col2.x = -body2.invI * r2.x * r2.y;
-        K3.col2.y =  body2.invI * r2.x * r2.x;
+        let K3 = new Mat22(
+            body2.invI * r2.y * r2.y,
+            -body2.invI * r2.x * r2.y,
+            -body2.invI * r2.x * r2.y,
+            body2.invI * r2.x * r2.x
+        );
 
         let K = Mat22.add(Mat22.add(K1, K2), K3);
 
-        K.col1.x += this.softness;
-        K.col2.y += this.softness;
+        K.a += this.softness;
+        K.d += this.softness;
       
         this.M = Mat22.invert(K);
       

@@ -42,8 +42,8 @@ export default function Collide (contacts: Contact[], bodyA: Body, bodyB: Body):
     let posA = bodyA.position;
     let posB = bodyB.position;
 
-    let RotA = new Mat22(bodyA.rotation);
-    let RotB = new Mat22(bodyB.rotation);
+    let RotA = new Mat22().set(bodyA.rotation);
+    let RotB = new Mat22().set(bodyB.rotation);
 
     let RotAT = Mat22.transpose(RotA);
     let RotBT = Mat22.transpose(RotB);

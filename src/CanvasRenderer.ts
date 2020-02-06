@@ -48,7 +48,7 @@ export default class CanvasRenderer
 
     renderBody (body: Body, ctx: CanvasRenderingContext2D)
     {
-        let R: Mat22 = new Mat22(body.rotation);
+        let R: Mat22 = new Mat22().set(body.rotation);
         let x: Vec2 = body.position;
         let h: Vec2 = Vec2.mulSV(0.5, body.width);
         
@@ -99,8 +99,8 @@ export default class CanvasRenderer
         let b1 = joint.body1;
         let b2 = joint.body2;
       
-        let R1 = new Mat22(b1.rotation);
-        let R2 = new Mat22(b2.rotation);
+        let R1 = new Mat22().set(b1.rotation);
+        let R2 = new Mat22().set(b2.rotation);
         
         let x1 = b1.position;
         let p1 = Vec2.add(x1, Mat22.mulMV(R1, joint.localAnchor1));

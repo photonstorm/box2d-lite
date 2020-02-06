@@ -127,50 +127,98 @@ class Body {
  * Ported to TypeScript by Richard Davey, 2020.
  */
 class Mat22 {
-    constructor(aOvA, vB) {
-        this.col1 = new Vec2();
-        this.col2 = new Vec2();
-        if (typeof aOvA === 'number' && vB === undefined) {
-            const c = Math.cos(aOvA);
-            const s = Math.sin(aOvA);
-            this.col1.set(c, s);
-            this.col2.set(-s, c);
-        }
-        else if (typeof aOvA === 'object' && typeof vB === 'object') {
-            this.col1 = aOvA;
-            this.col2 = vB;
-        }
+    constructor(a = 0, c = 0, b = 0, d = 0) {
+        //  col1
+        this.a = a;
+        this.c = c;
+        //  col2
+        this.b = b;
+        this.d = d;
         window['mat22Total']++;
     }
+    set(v) {
+        const c = Math.cos(v);
+        const s = Math.sin(v);
+        this.a = c;
+        this.c = s;
+        this.b = -s;
+        this.d = c;
+        return this;
+    }
+    setFromVec2(vA, vB) {
+        this.a = vA.x;
+        this.c = vA.y;
+        this.b = vB.x;
+        this.d = vB.y;
+        return this;
+    }
+    get col1() {
+        return new Vec2(this.a, this.c);
+    }
+    get col2() {
+        return new Vec2(this.b, this.d);
+    }
     static add(mA, mB) {
-        return new Mat22(Vec2.add(mA.col1, mB.col1), Vec2.add(mA.col2, mB.col2));
+        return new Mat22(mA.a + mB.a, mA.c + mB.c, mA.b + mB.b, mA.d + mB.d);
+        // return new Mat22().setFromVec2(
+        // Vec2.add(mA.col1, mB.col1),
+        // Vec2.add(mA.col2, mB.col2)
+        // );
     }
     static mulMV(m, v) {
-        return new Vec2(m.col1.x * v.x + m.col2.x * v.y, m.col1.y * v.x + m.col2.y * v.y);
+        return new Vec2(m.a * v.x + m.b * v.y, m.c * v.x + m.d * v.y);
+        // return new Vec2(
+        // m.col1.x * v.x + m.col2.x * v.y,
+        // m.col1.y * v.x + m.col2.y * v.y
+        // );
     }
     static mulMM(mA, mB) {
-        return new Mat22(Mat22.mulMV(mA, mB.col1), Mat22.mulMV(mA, mB.col2));
+        //     Mat22.mulMV(mA, mB.col1),
+        const a = mA.a * mB.a + mA.c * mB.c;
+        const c = mA.b * mB.a + mA.d * mB.c;
+        //     Mat22.mulMV(mA, mB.col2)
+        const b = mA.a * mB.b + mA.c * mB.d;
+        const d = mA.b * mB.b + mA.d * mB.d;
+        return new Mat22(a, c, b, d);
+        // return new Mat22(
+        //     Mat22.mulMV(mA, mB.col1),
+        //     Mat22.mulMV(mA, mB.col2)
+        // );
     }
     static abs(m) {
-        return new Mat22(Vec2.abs(m.col1), Vec2.abs(m.col2));
+        return new Mat22(Math.abs(m.a), Math.abs(m.c), Math.abs(m.b), Math.abs(m.d));
+        // return new Mat22(
+        //     Vec2.abs(m.col1),
+        //     Vec2.abs(m.col2)
+        // );
     }
     static transpose(m) {
-        return new Mat22(new Vec2(m.col1.x, m.col2.x), new Vec2(m.col1.y, m.col2.y));
+        return new Mat22(m.a, m.b, m.c, m.d);
+        // return new Mat22(
+        //     new Vec2(m.col1.x, m.col2.x),
+        //     new Vec2(m.col1.y, m.col2.y)
+        // );
     }
     static invert(m) {
-        const a = m.col1.x;
-        const b = m.col2.x;
-        const c = m.col1.y;
-        const d = m.col2.y;
-        const adjugate = new Mat22();
-        let det = a * d - b * c;
+        const a = m.a;
+        const c = m.c;
+        const b = m.b;
+        const d = m.d;
+        let det = 1 / (a * d - b * c);
+        return new Mat22(det * d, det * -b, det * -c, det * a);
+        // const a: number = m.col1.x;
+        // const b: number = m.col2.x;
+        // const c: number = m.col1.y;
+        // const d: number = m.col2.y;
+        // const adjugate: Mat22 = new Mat22();
+        // let det: number = a * d - b * c;
         //  1 / determinant, multiplied by adjugate matrix
-        det = 1 / det;
-        adjugate.col1.x = det * d;
-        adjugate.col2.x = det * -b;
-        adjugate.col1.y = det * -c;
-        adjugate.col2.y = det * a;
-        return adjugate;
+        // det = 1 / det;
+        // adjugate.col1.x = det *  d;
+        // adjugate.col2.x = det * -b;
+        // adjugate.col1.y = det * -c;
+        // adjugate.col2.y = det *  a;
+        // return adjugate;
     }
 }
 
@@ -199,7 +247,7 @@ class CanvasRenderer {
         }
     }
     renderBody(body, ctx) {
-        let R = new Mat22(body.rotation);
+        let R = new Mat22().set(body.rotation);
         let x = body.position;
         let h = Vec2.mulSV(0.5, body.width);
         // linear and rotational position of vertices
@@ -239,8 +287,8 @@ class CanvasRenderer {
     renderJoint(joint, ctx) {
         let b1 = joint.body1;
         let b2 = joint.body2;
-        let R1 = new Mat22(b1.rotation);
-        let R2 = new Mat22(b2.rotation);
+        let R1 = new Mat22().set(b1.rotation);
+        let R2 = new Mat22().set(b2.rotation);
         let x1 = b1.position;
         let p1 = Vec2.add(x1, Mat22.mulMV(R1, joint.localAnchor1));
         let x2 = b2.position;
@@ -282,8 +330,8 @@ class Joint {
         this.world = world;
         this.body1 = body1;
         this.body2 = body2;
-        let Rot1 = new Mat22(body1.rotation);
-        let Rot2 = new Mat22(body2.rotation);
+        let Rot1 = new Mat22().set(body1.rotation);
+        let Rot2 = new Mat22().set(body2.rotation);
         let Rot1T = Mat22.transpose(Rot1);
         let Rot2T = Mat22.transpose(Rot2);
         this.localAnchor1 = Mat22.mulMV(Rot1T, Vec2.sub(anchor, body1.position));
@@ -293,31 +341,19 @@ class Joint {
         const body1 = this.body1;
         const body2 = this.body2;
         //  Pre-compute anchors, mass matrix and bias
-        let Rot1 = new Mat22(body1.rotation);
-        let Rot2 = new Mat22(body2.rotation);
+        let Rot1 = new Mat22().set(body1.rotation);
+        let Rot2 = new Mat22().set(body2.rotation);
         let r1 = Mat22.mulMV(Rot1, this.localAnchor1);
         let r2 = Mat22.mulMV(Rot2, this.localAnchor2);
         //  Inverse mass matrix
-        let K1 = new Mat22();
-        K1.col1.x = body1.invMass + body2.invMass;
-        K1.col1.y = 0;
-        K1.col2.x = 0;
-        K1.col2.y = body1.invMass + body2.invMass;
+        let K1 = new Mat22(body1.invMass + body2.invMass, 0, 0, body1.invMass + body2.invMass);
         //  body1 rotational mass matrix i.e. moment of inertia
-        let K2 = new Mat22();
-        K2.col1.x = body1.invI * r1.y * r1.y;
-        K2.col1.y = -body1.invI * r1.x * r1.y;
-        K2.col2.x = -body1.invI * r1.x * r1.y;
-        K2.col2.y = body1.invI * r1.x * r1.x;
+        let K2 = new Mat22(body1.invI * r1.y * r1.y, -body1.invI * r1.x * r1.y, -body1.invI * r1.x * r1.y, body1.invI * r1.x * r1.x);
         //  body2 rotational mass matrix i.e. moment of inertia
-        let K3 = new Mat22();
-        K3.col1.x = body2.invI * r2.y * r2.y;
-        K3.col1.y = -body2.invI * r2.x * r2.y;
-        K3.col2.x = -body2.invI * r2.x * r2.y;
-        K3.col2.y = body2.invI * r2.x * r2.x;
+        let K3 = new Mat22(body2.invI * r2.y * r2.y, -body2.invI * r2.x * r2.y, -body2.invI * r2.x * r2.y, body2.invI * r2.x * r2.x);
         let K = Mat22.add(Mat22.add(K1, K2), K3);
-        K.col1.x += this.softness;
-        K.col2.y += this.softness;
+        K.a += this.softness;
+        K.d += this.softness;
         this.M = Mat22.invert(K);
         let p1 = Vec2.add(body1.position, r1);
         let p2 = Vec2.add(body2.position, r2);
@@ -638,8 +674,8 @@ function Collide(contacts, bodyA, bodyB) {
     let hB = Vec2.mulSV(0.5, bodyB.width); // half the width of bodyB
     let posA = bodyA.position;
     let posB = bodyB.position;
-    let RotA = new Mat22(bodyA.rotation);
-    let RotB = new Mat22(bodyB.rotation);
+    let RotA = new Mat22().set(bodyA.rotation);
+    let RotB = new Mat22().set(bodyB.rotation);
     let RotAT = Mat22.transpose(RotA);
     let RotBT = Mat22.transpose(RotB);
     let dp = Vec2.sub(posB, posA);
