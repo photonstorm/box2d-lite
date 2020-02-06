@@ -62,6 +62,8 @@ export default class CanvasRenderer
         let o: Vec2 = Vec2.add(x, Mat22.mulMV(R, new Vec2(h.x,  0)));
         
         // draw centroid of rectangle
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = 0.5;
         ctx.beginPath();
         ctx.arc(body.position.x, body.position.y, 2, 0, 2 * Math.PI);
         ctx.stroke();
@@ -84,6 +86,9 @@ export default class CanvasRenderer
 
     renderContact (contact: Contact, ctx: CanvasRenderingContext2D)
     {
+        ctx.strokeStyle = 'red';
+        ctx.lineWidth = 0.5;
+
         ctx.beginPath();
         ctx.arc(contact.position.x, contact.position.y, 2, 0, 2 * Math.PI);
         ctx.stroke();
