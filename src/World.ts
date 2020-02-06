@@ -159,7 +159,7 @@ export default class World
         {
             joints[i].preStep(inverseDelta);
         }
-        
+
         //  Perform iterations
 
         for (let i: number = 0; i < this.iterations; i++)
@@ -176,7 +176,7 @@ export default class World
                 joints[j].applyImpulse();
             }
         }
-        
+
         //  Integrate velocities
 
         for (let i: number = 0; i < bodies.length; i++)
