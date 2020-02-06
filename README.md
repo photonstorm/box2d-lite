@@ -10,18 +10,26 @@ All classes ported. Test bed created. Everything runs, but it's generating a sta
 
 Inlined all of the Mat22 static functions.
 
-Test case now down from 270k vec2 per frame to around 96k.
-Mat22s still at 37k per frame.
+Frame: 200 = 64,448 vec2s - 36,933 mat22s
+Frame: 600 = 97,684 vec2s - 36,999 mat22s
 
-Frame: 200 = 64,448 vec2s
-Frame: 600 = 97,684 vec2s
+Test case now down from 270k vec2 per frame to around 97k.
+
+mat22s fluctate per frame
 
 ## v0.0.3
 
 ComputeIncidentEdge clipVertex inline:
 
-Frame: 200 = 64,224 vec2s
-Frame: 600 = 97,196 vec2s
+Frame: 200 = 64,224 vec2s - 36,933 mat22s
+Frame: 600 = 97,196 vec2s - 36,999 mat22s
 
 ## v0.0.4
+
+ComputeIncidentEdge RotT inline:
+
+Frame: 200 = 64,224 vec2s - 36,877 mat22s
+Frame: 600 = 97,196 vec2s - 36,877 mat22s
+
+mat22s now solid per frame.
 
