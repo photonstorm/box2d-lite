@@ -358,16 +358,29 @@ export default function Collide (contacts: Contact[], bodyA: Body, bodyB: Body):
 
         if (separation <= 0)
         {
-            contacts[numContacts] = new Contact();
-            contacts[numContacts].separation = separation;
-            contacts[numContacts].normal.set(normalX, normalY);
-
-            contacts[numContacts].position = new Vec2(
+            contacts[numContacts] = new Contact(
+                separation,
+                normalX,
+                normalY,
                 clipPoints[i].v.x - (separation * frontNormalX),
-                clipPoints[i].v.y - (separation * frontNormalY)
+                clipPoints[i].v.y - (separation * frontNormalY),
+                clipPoints[i].fp
             );
 
-            contacts[numContacts].feature = clipPoints[i].fp;
+            // contacts[numContacts].separation = separation;
+            // contacts[numContacts].normal.set(normalX, normalY);
+
+            // contacts[numContacts].position = new Vec2(
+            //     clipPoints[i].v.x - (separation * frontNormalX),
+            //     clipPoints[i].v.y - (separation * frontNormalY)
+            // );
+
+            // contacts[numContacts].position.set(
+            //     clipPoints[i].v.x - (separation * frontNormalX),
+            //     clipPoints[i].v.y - (separation * frontNormalY)
+            // );
+
+            // contacts[numContacts].feature = clipPoints[i].fp;
 
             if (axis === Axis.FACE_B_X || axis === Axis.FACE_B_Y)
             {
