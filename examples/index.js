@@ -158,52 +158,24 @@ class Mat22 {
         this.d = vB.y;
         return this;
     }
-    get col1() {
-        return new Vec2(this.a, this.c);
-    }
-    get col2() {
-        return new Vec2(this.b, this.d);
-    }
     static add(mA, mB) {
         return new Mat22(mA.a + mB.a, mA.c + mB.c, mA.b + mB.b, mA.d + mB.d);
-        // return new Mat22().setFromVec2(
-        // Vec2.add(mA.col1, mB.col1),
-        // Vec2.add(mA.col2, mB.col2)
-        // );
     }
     static mulMV(m, v) {
         return new Vec2(m.a * v.x + m.b * v.y, m.c * v.x + m.d * v.y);
-        // return new Vec2(
-        // m.col1.x * v.x + m.col2.x * v.y,
-        // m.col1.y * v.x + m.col2.y * v.y
-        // );
     }
     static mulMM(mA, mB) {
-        //     Mat22.mulMV(mA, mB.col1),
         const a = mA.a * mB.a + mA.c * mB.c;
         const c = mA.b * mB.a + mA.d * mB.c;
-        //     Mat22.mulMV(mA, mB.col2)
         const b = mA.a * mB.b + mA.c * mB.d;
         const d = mA.b * mB.b + mA.d * mB.d;
         return new Mat22(a, c, b, d);
-        // return new Mat22(
-        //     Mat22.mulMV(mA, mB.col1),
-        //     Mat22.mulMV(mA, mB.col2)
-        // );
     }
     static abs(m) {
         return new Mat22(Math.abs(m.a), Math.abs(m.c), Math.abs(m.b), Math.abs(m.d));
-        // return new Mat22(
-        //     Vec2.abs(m.col1),
-        //     Vec2.abs(m.col2)
-        // );
     }
     static transpose(m) {
         return new Mat22(m.a, m.b, m.c, m.d);
-        // return new Mat22(
-        //     new Vec2(m.col1.x, m.col2.x),
-        //     new Vec2(m.col1.y, m.col2.y)
-        // );
     }
     static invert(m) {
         const a = m.a;
@@ -212,19 +184,6 @@ class Mat22 {
         const d = m.d;
         let det = 1 / (a * d - b * c);
         return new Mat22(det * d, det * -b, det * -c, det * a);
-        // const a: number = m.col1.x;
-        // const b: number = m.col2.x;
-        // const c: number = m.col1.y;
-        // const d: number = m.col2.y;
-        // const adjugate: Mat22 = new Mat22();
-        // let det: number = a * d - b * c;
-        //  1 / determinant, multiplied by adjugate matrix
-        // det = 1 / det;
-        // adjugate.col1.x = det *  d;
-        // adjugate.col2.x = det * -b;
-        // adjugate.col1.y = det * -c;
-        // adjugate.col2.y = det *  a;
-        // return adjugate;
     }
 }
 
@@ -232,6 +191,13 @@ class CanvasRenderer {
     constructor(canvas) {
         this.canvas = canvas;
         this.context = canvas.getContext('2d');
+        this._M0 = new Mat22();
+        this._M1 = new Mat22();
+        this._v1 = new Vec2();
+        this._v2 = new Vec2();
+        this._v3 = new Vec2();
+        this._v4 = new Vec2();
+        this._orientation = new Vec2();
     }
     render(world) {
         const context = this.context;
@@ -253,34 +219,50 @@ class CanvasRenderer {
         }
     }
     renderBody(body, ctx) {
-        let R = new Mat22().set(body.rotation);
-        let x = body.position;
-        let h = Vec2.mulSV(0.5, body.width);
+        this._M0.set(body.rotation);
+        let position = body.position;
+        // let h: Vec2 = Vec2.mulSV(0.5, body.width);
+        let hX = 0.5 * body.width.x;
+        let hY = 0.5 * body.width.y;
         // linear and rotational position of vertices
-        let v1 = Vec2.add(x, Mat22.mulMV(R, new Vec2(-h.x, -h.y)));
-        let v2 = Vec2.add(x, Mat22.mulMV(R, new Vec2(h.x, -h.y)));
-        let v3 = Vec2.add(x, Mat22.mulMV(R, new Vec2(h.x, h.y)));
-        let v4 = Vec2.add(x, Mat22.mulMV(R, new Vec2(-h.x, h.y)));
-        // orientation line
-        let o = Vec2.add(x, Mat22.mulMV(R, new Vec2(h.x, 0)));
+        // this._v5.set(-hX, -hY);
+        // this._v6.set(hX, -hY);
+        // this._v7.set(hX, hY);
+        // this._v8.set(-hX, hY);
+        const v1 = this._v1;
+        const v2 = this._v2;
+        const v3 = this._v3;
+        const v4 = this._v4;
+        // let v1: Vec2 = Vec2.add(position, Mat22.mulMV(this._M0, this._v5));
+        v1.set(position.x + (this._M0.a * -hX + this._M0.b * -hY), position.y + (this._M0.c * -hX + this._M0.d * -hY));
+        // let v2: Vec2 = Vec2.add(position, Mat22.mulMV(this._M0, this._v6));
+        v2.set(position.x + (this._M0.a * hX + this._M0.b * -hY), position.y + (this._M0.c * hX + this._M0.d * -hY));
+        // let v3: Vec2 = Vec2.add(position, Mat22.mulMV(this._M0, this._v7));
+        v3.set(position.x + (this._M0.a * hX + this._M0.b * hY), position.y + (this._M0.c * hX + this._M0.d * hY));
+        // let v4: Vec2 = Vec2.add(position, Mat22.mulMV(this._M0, this._v8));
+        v4.set(position.x + (this._M0.a * -hX + this._M0.b * hY), position.y + (this._M0.c * -hX + this._M0.d * hY));
+        // let v1: Vec2 = Vec2.add(x, Mat22.mulMV(this._M0, new Vec2(-h.x, -h.y)));
+        // let v2: Vec2 = Vec2.add(x, Mat22.mulMV(this._M0, new Vec2( h.x, -h.y)));
+        // let v3: Vec2 = Vec2.add(x, Mat22.mulMV(this._M0, new Vec2( h.x,  h.y)));
+        // let v4: Vec2 = Vec2.add(x, Mat22.mulMV(this._M0, new Vec2(-h.x,  h.y)));
+        const orientation = this._orientation;
+        // let orientation: Vec2 = Vec2.add(position, Mat22.mulMV(this._M0, new Vec2(hX, 0)));
+        orientation.set(position.x + (this._M0.a * hX), position.y + (this._M0.c * hX));
         // draw centroid of rectangle
         ctx.strokeStyle = 'black';
         ctx.lineWidth = 0.5;
         ctx.beginPath();
         ctx.arc(body.position.x, body.position.y, 2, 0, 2 * Math.PI);
-        ctx.stroke();
         // draw shape
-        ctx.beginPath();
         ctx.moveTo(v1.x, v1.y);
         ctx.lineTo(v2.x, v2.y);
         ctx.lineTo(v3.x, v3.y);
         ctx.lineTo(v4.x, v4.y);
         ctx.lineTo(v1.x, v1.y);
-        ctx.stroke();
         // draw orientation line
-        ctx.beginPath();
-        ctx.moveTo(x.x, x.y);
-        ctx.lineTo(o.x, o.y);
+        ctx.moveTo(position.x, position.y);
+        ctx.lineTo(orientation.x, orientation.y);
+        //  stroke it all
         ctx.stroke();
     }
     renderContact(contact, ctx) {
@@ -293,16 +275,21 @@ class CanvasRenderer {
     renderJoint(joint, ctx) {
         let b1 = joint.body1;
         let b2 = joint.body2;
-        let R1 = new Mat22().set(b1.rotation);
-        let R2 = new Mat22().set(b2.rotation);
-        let x1 = b1.position;
-        let p1 = Vec2.add(x1, Mat22.mulMV(R1, joint.localAnchor1));
-        let x2 = b2.position;
-        let p2 = Vec2.add(x2, Mat22.mulMV(R2, joint.localAnchor2));
+        this._M0.set(b1.rotation);
+        this._M1.set(b2.rotation);
+        let position1 = b1.position;
+        let position2 = b2.position;
+        const p1 = this._v1;
+        const p2 = this._v2;
+        // let x2 = b2.position;
+        // let p1 = Vec2.add(x1, Mat22.mulMV(this._M0, joint.localAnchor1));
+        // let p2 = Vec2.add(x2, Mat22.mulMV(this._M1, joint.localAnchor2));
+        p1.set(position1.x + (this._M0.a * joint.localAnchor1.x + this._M0.b * joint.localAnchor1.y), position1.y + (this._M0.c * joint.localAnchor1.x + this._M0.d * joint.localAnchor1.y));
+        p2.set(position2.x + (this._M1.a * joint.localAnchor2.x + this._M1.b * joint.localAnchor2.y), position2.y + (this._M1.c * joint.localAnchor2.x + this._M1.d * joint.localAnchor2.y));
         ctx.beginPath();
-        ctx.moveTo(x1.x, x1.y);
+        ctx.moveTo(position1.x, position1.y);
         ctx.lineTo(p1.x, p1.y);
-        ctx.lineTo(x2.x, x2.y);
+        ctx.lineTo(position2.x, position2.y);
         ctx.lineTo(p2.x, p2.y);
         ctx.stroke();
     }
@@ -536,12 +523,19 @@ function ComputeIncidentEdge(c, h, pos, Rot, normalX, normalY) {
     //     -(RotT.a * normalX + RotT.b * normalY),
     //     -(RotT.c * normalX + RotT.d * normalY)
     // );
-    let n = new Vec2(-(invA * normalX + invB * normalY), -(invC * normalX + invD * normalY));
-    let nAbs = Vec2.abs(n);
+    // let n: Vec2 = new Vec2(
+    //     -(invA * normalX + invB * normalY),
+    //     -(invC * normalX + invD * normalY)
+    // );
+    const nX = -(invA * normalX + invB * normalY);
+    const nY = -(invC * normalX + invD * normalY);
+    const absX = Math.abs(nX);
+    const absY = Math.abs(nY);
+    // let nAbs: Vec2 = Vec2.abs(n);
     const clipVertex0 = new ClipVertex();
     const clipVertex1 = new ClipVertex();
-    if (nAbs.x > nAbs.y) {
-        if (Math.sign(n.x) > 0) {
+    if (absX > absY) {
+        if (Math.sign(nX) > 0) {
             clipVertex0.v.set(h.x, -h.y);
             clipVertex0.fp.e.inEdge2 = EdgeNumbers.EDGE3;
             clipVertex0.fp.e.outEdge2 = EdgeNumbers.EDGE4;
@@ -559,7 +553,7 @@ function ComputeIncidentEdge(c, h, pos, Rot, normalX, normalY) {
         }
     }
     else {
-        if (Math.sign(n.y) > 0) {
+        if (Math.sign(nY) > 0) {
             clipVertex0.v.set(h.x, h.y);
             clipVertex0.fp.e.inEdge2 = EdgeNumbers.EDGE4;
             clipVertex0.fp.e.outEdge2 = EdgeNumbers.EDGE1;
