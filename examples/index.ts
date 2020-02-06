@@ -4,37 +4,41 @@ import Joint from '../src/Joint';
 import World from '../src/World';
 import Vec2 from '../src/math/Vec2';
 
-console.log('Box2D Lite');
+window['vec2Total'] = 0;
+window['mat22Total'] = 0;
 
 let delta = 1 / 30;
-let world = new World(new Vec2(0, 40), 20);
+let world = new World(new Vec2(0, 40), 10);
 
-let floor = new Body(new Vec2(1000, 80), Number.MAX_VALUE);
+let floor = new Body(new Vec2(2000, 80), Number.MAX_VALUE);
 
 floor.position.set(500, 500);
 
 world.addBody(floor);
 
 let box;
-let boxPos = new Vec2(170, -150);
+let boxPos = new Vec2(300, -150);
 let boxesPerRow = 10;
 let boxesPerCol = 10;
 let boxOffset = 16;
-for (let i = 0; i < boxesPerRow; i++) {
-  for (let j = 0; j < boxesPerCol; j++) {
-    box = new Body(new Vec2(12, 12), 5);
-    box.position.set(boxPos.x + i * boxOffset, boxPos.y + j * boxOffset);
-    box.velocity.y = -50 + j;
-    world.addBody(box);
-  }
+
+for (let i = 0; i < boxesPerRow; i++)
+{
+    for (let j = 0; j < boxesPerCol; j++)
+    {
+        box = new Body(new Vec2(12, 12), 5);
+        box.position.set(boxPos.x + i * boxOffset, boxPos.y + j * boxOffset);
+        box.velocity.y = -50 + j;
+        world.addBody(box);
+    }
 }
 
 let support = new Body(new Vec2(25, 25), Number.MAX_VALUE);
-support.position.set(350, 50);
+support.position.set(350+180, 50);
 world.addBody(support);
 
 let pendulum = new Body(new Vec2(50, 50), 900);
-pendulum.position.set(505, 40);
+pendulum.position.set(505+180, 40);
 world.addBody(pendulum);
 
 let joint = new Joint();
@@ -43,11 +47,36 @@ world.addJoint(joint);
 
 let renderer = new CanvasRenderer(document.getElementById('demo') as HTMLCanvasElement);
 
+let pause = true;
+let frame = 0;
+
+let frameText = document.getElementById('frame') as HTMLFormElement;
+let vec2Text = document.getElementById('vec2') as HTMLFormElement;
+let mat22Text = document.getElementById('mat22') as HTMLFormElement;
+
+document.getElementById('pause').addEventListener('click', () => {
+
+    pause = (pause) ? false : true;
+
+});
+
 function loop ()
 {
-    world.step(delta);
+    window['vec2Total'] = 0;
+    window['mat22Total'] = 0;
 
-    renderer.render(world);
+    if (!pause)
+    {
+        world.step(delta);
+
+        renderer.render(world);
+
+        frame++;
+
+        frameText.value = frame.toString();
+        vec2Text.value = window['vec2Total'].toString();
+        mat22Text.value = window['mat22Total'].toString();
+    }
 
     requestAnimationFrame(loop);
 }
