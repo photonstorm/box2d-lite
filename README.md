@@ -31,3 +31,10 @@ ComputeIncidentEdge n / abs n inline:
 Frame: 200 = 64,112 vec2s - 36,877 mat22s
 Frame: 600 = 96,952 vec2s - 36,877 mat22s
 
+## v0.0.5
+
+Inline mat22 and vec2s in CanvasRenderer:
+
+Frame: 200 = 62,460 vec2s - 36,772 mat22s
+Frame: 600 = 95,300 vec2s - 36,772 mat22s
+
