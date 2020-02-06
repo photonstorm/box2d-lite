@@ -1,0 +1,1096 @@
+/**
+ * Copyright (c) 2006-2007 Erin Catto http://www.gphysics.com
+ *
+ * Permission to use, copy, modify, distribute and sell this software
+ * and its documentation for any purpose is hereby granted without fee,
+ * provided that the above copyright notice appear in all copies.
+ * Erin Catto makes no representations about the suitability
+ * of this software for any purpose.
+ * It is provided "as is" without express or implied warranty.
+ *
+ * Ported to TypeScript by Richard Davey, 2020.
+ */
+class Vec2 {
+    constructor(x = 0, y = 0) {
+        this.x = x;
+        this.y = y;
+        window['vec2Total']++;
+    }
+    set(x = 0, y = 0) {
+        this.x = x;
+        this.y = y;
+    }
+    add(v) {
+        this.x += v.x;
+        this.y += v.y;
+    }
+    sub(v) {
+        this.x -= v.x;
+        this.y -= v.y;
+    }
+    mul(s) {
+        this.x *= s;
+        this.y *= s;
+    }
+    static add(vA, vB) {
+        return new Vec2(vA.x + vB.x, vA.y + vB.y);
+    }
+    static sub(vA, vB) {
+        return new Vec2(vA.x - vB.x, vA.y - vB.y);
+    }
+    static mulVV(vA, vB) {
+        return new Vec2(vA.x * vB.x, vA.y * vB.y);
+    }
+    static mulSV(s, v) {
+        return new Vec2(s * v.x, s * v.y);
+    }
+    static abs(v) {
+        return new Vec2(Math.abs(v.x), Math.abs(v.y));
+    }
+    static neg(v) {
+        return new Vec2(-v.x, -v.y);
+    }
+    static dot(vA, vB) {
+        return vA.x * vB.x + vA.y * vB.y;
+    }
+    static crossVV(vA, vB) {
+        return vA.x * vB.y - vA.y * vB.x;
+    }
+    static crossVS(v, s) {
+        return new Vec2(s * v.y, -s * v.x);
+    }
+    static crossSV(s, v) {
+        return new Vec2(-s * v.y, s * v.x);
+    }
+}
+
+/**
+ * Copyright (c) 2006-2007 Erin Catto http://www.gphysics.com
+ *
+ * Permission to use, copy, modify, distribute and sell this software
+ * and its documentation for any purpose is hereby granted without fee,
+ * provided that the above copyright notice appear in all copies.
+ * Erin Catto makes no representations about the suitability
+ * of this software for any purpose.
+ * It is provided "as is" without express or implied warranty.
+ *
+ * Ported to TypeScript by Richard Davey, 2020.
+ */
+class Body {
+    constructor(width, mass) {
+        this.position = new Vec2();
+        this.rotation = 0;
+        this.velocity = new Vec2();
+        this.angularVelocity = 0;
+        this.force = new Vec2();
+        this.torque = 0;
+        this.width = new Vec2();
+        this.friction = 0.2;
+        this.mass = Number.MAX_VALUE;
+        this.invMass = 0;
+        this.I = Number.MAX_VALUE;
+        this.invI = 0;
+        this.id = 0;
+        this.set(width, mass);
+    }
+    set(width, mass) {
+        this.width = width;
+        this.mass = mass;
+        if (mass < Number.MAX_VALUE) {
+            this.invMass = 1 / mass;
+            this.I = mass * (width.x * width.x + width.y * width.y) / 12;
+            this.invI = 1 / this.I;
+        }
+        else {
+            this.invMass = 0;
+            this.I = Number.MAX_VALUE;
+            this.invI = 0;
+        }
+        return this;
+    }
+    addForce(force) {
+        this.force.add(force);
+        return this;
+    }
+}
+
+/**
+ * Copyright (c) 2006-2007 Erin Catto http://www.gphysics.com
+ *
+ * Permission to use, copy, modify, distribute and sell this software
+ * and its documentation for any purpose is hereby granted without fee,
+ * provided that the above copyright notice appear in all copies.
+ * Erin Catto makes no representations about the suitability
+ * of this software for any purpose.
+ * It is provided "as is" without express or implied warranty.
+ *
+ * Ported to TypeScript by Richard Davey, 2020.
+ */
+class Mat22 {
+    constructor(aOvA, vB) {
+        this.col1 = new Vec2();
+        this.col2 = new Vec2();
+        if (typeof aOvA === 'number' && vB === undefined) {
+            const c = Math.cos(aOvA);
+            const s = Math.sin(aOvA);
+            this.col1.set(c, s);
+            this.col2.set(-s, c);
+        }
+        else if (typeof aOvA === 'object' && typeof vB === 'object') {
+            this.col1 = aOvA;
+            this.col2 = vB;
+        }
+        window['mat22Total']++;
+    }
+    static add(mA, mB) {
+        return new Mat22(Vec2.add(mA.col1, mB.col1), Vec2.add(mA.col2, mB.col2));
+    }
+    static mulMV(m, v) {
+        return new Vec2(m.col1.x * v.x + m.col2.x * v.y, m.col1.y * v.x + m.col2.y * v.y);
+    }
+    static mulMM(mA, mB) {
+        return new Mat22(Mat22.mulMV(mA, mB.col1), Mat22.mulMV(mA, mB.col2));
+    }
+    static abs(m) {
+        return new Mat22(Vec2.abs(m.col1), Vec2.abs(m.col2));
+    }
+    static transpose(m) {
+        return new Mat22(new Vec2(m.col1.x, m.col2.x), new Vec2(m.col1.y, m.col2.y));
+    }
+    static invert(m) {
+        const a = m.col1.x;
+        const b = m.col2.x;
+        const c = m.col1.y;
+        const d = m.col2.y;
+        const adjugate = new Mat22();
+        let det = a * d - b * c;
+        //  1 / determinant, multiplied by adjugate matrix
+        det = 1 / det;
+        adjugate.col1.x = det * d;
+        adjugate.col2.x = det * -b;
+        adjugate.col1.y = det * -c;
+        adjugate.col2.y = det * a;
+        return adjugate;
+    }
+}
+
+class CanvasRenderer {
+    constructor(canvas) {
+        this.canvas = canvas;
+        this.context = canvas.getContext('2d');
+    }
+    render(world) {
+        const context = this.context;
+        const bodies = world.bodies;
+        const joints = world.joints;
+        const arbiters = world.arbiters;
+        context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        for (let i = 0; i < bodies.length; i++) {
+            this.renderBody(bodies[i], context);
+        }
+        for (let i = 0; i < arbiters.length; i++) {
+            let arbiter = arbiters[i].second;
+            for (let c = 0; c < arbiter.contacts.length; c++) {
+                this.renderContact(arbiter.contacts[c], context);
+            }
+        }
+        for (let i = 0; i < joints.length; i++) {
+            this.renderJoint(joints[i], context);
+        }
+    }
+    renderBody(body, ctx) {
+        let R = new Mat22(body.rotation);
+        let x = body.position;
+        let h = Vec2.mulSV(0.5, body.width);
+        // linear and rotational position of vertices
+        let v1 = Vec2.add(x, Mat22.mulMV(R, new Vec2(-h.x, -h.y)));
+        let v2 = Vec2.add(x, Mat22.mulMV(R, new Vec2(h.x, -h.y)));
+        let v3 = Vec2.add(x, Mat22.mulMV(R, new Vec2(h.x, h.y)));
+        let v4 = Vec2.add(x, Mat22.mulMV(R, new Vec2(-h.x, h.y)));
+        // orientation line
+        let o = Vec2.add(x, Mat22.mulMV(R, new Vec2(h.x, 0)));
+        // draw centroid of rectangle
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.arc(body.position.x, body.position.y, 2, 0, 2 * Math.PI);
+        ctx.stroke();
+        // draw shape
+        ctx.beginPath();
+        ctx.moveTo(v1.x, v1.y);
+        ctx.lineTo(v2.x, v2.y);
+        ctx.lineTo(v3.x, v3.y);
+        ctx.lineTo(v4.x, v4.y);
+        ctx.lineTo(v1.x, v1.y);
+        ctx.stroke();
+        // draw orientation line
+        ctx.beginPath();
+        ctx.moveTo(x.x, x.y);
+        ctx.lineTo(o.x, o.y);
+        ctx.stroke();
+    }
+    renderContact(contact, ctx) {
+        ctx.strokeStyle = 'red';
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.arc(contact.position.x, contact.position.y, 2, 0, 2 * Math.PI);
+        ctx.stroke();
+    }
+    renderJoint(joint, ctx) {
+        let b1 = joint.body1;
+        let b2 = joint.body2;
+        let R1 = new Mat22(b1.rotation);
+        let R2 = new Mat22(b2.rotation);
+        let x1 = b1.position;
+        let p1 = Vec2.add(x1, Mat22.mulMV(R1, joint.localAnchor1));
+        let x2 = b2.position;
+        let p2 = Vec2.add(x2, Mat22.mulMV(R2, joint.localAnchor2));
+        ctx.beginPath();
+        ctx.moveTo(x1.x, x1.y);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.lineTo(x2.x, x2.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+    }
+}
+
+/**
+ * Copyright (c) 2006-2007 Erin Catto http://www.gphysics.com
+ *
+ * Permission to use, copy, modify, distribute and sell this software
+ * and its documentation for any purpose is hereby granted without fee,
+ * provided that the above copyright notice appear in all copies.
+ * Erin Catto makes no representations about the suitability
+ * of this software for any purpose.
+ * It is provided "as is" without express or implied warranty.
+ *
+ * Ported to TypeScript by Richard Davey, 2020.
+ */
+class Joint {
+    constructor() {
+        this.M = new Mat22();
+        this.localAnchor1 = new Vec2();
+        this.localAnchor2 = new Vec2();
+        this.r1 = new Vec2();
+        this.r2 = new Vec2();
+        this.bias = new Vec2();
+        this.P = new Vec2(); // accumulated impulse
+        this.biasFactor = 0.2;
+        this.softness = 0;
+    }
+    set(world, body1, body2, anchor) {
+        this.world = world;
+        this.body1 = body1;
+        this.body2 = body2;
+        let Rot1 = new Mat22(body1.rotation);
+        let Rot2 = new Mat22(body2.rotation);
+        let Rot1T = Mat22.transpose(Rot1);
+        let Rot2T = Mat22.transpose(Rot2);
+        this.localAnchor1 = Mat22.mulMV(Rot1T, Vec2.sub(anchor, body1.position));
+        this.localAnchor2 = Mat22.mulMV(Rot2T, Vec2.sub(anchor, body2.position));
+    }
+    preStep(inverseDelta) {
+        const body1 = this.body1;
+        const body2 = this.body2;
+        //  Pre-compute anchors, mass matrix and bias
+        let Rot1 = new Mat22(body1.rotation);
+        let Rot2 = new Mat22(body2.rotation);
+        let r1 = Mat22.mulMV(Rot1, this.localAnchor1);
+        let r2 = Mat22.mulMV(Rot2, this.localAnchor2);
+        //  Inverse mass matrix
+        let K1 = new Mat22();
+        K1.col1.x = body1.invMass + body2.invMass;
+        K1.col1.y = 0;
+        K1.col2.x = 0;
+        K1.col2.y = body1.invMass + body2.invMass;
+        //  body1 rotational mass matrix i.e. moment of inertia
+        let K2 = new Mat22();
+        K2.col1.x = body1.invI * r1.y * r1.y;
+        K2.col1.y = -body1.invI * r1.x * r1.y;
+        K2.col2.x = -body1.invI * r1.x * r1.y;
+        K2.col2.y = body1.invI * r1.x * r1.x;
+        //  body2 rotational mass matrix i.e. moment of inertia
+        let K3 = new Mat22();
+        K3.col1.x = body2.invI * r2.y * r2.y;
+        K3.col1.y = -body2.invI * r2.x * r2.y;
+        K3.col2.x = -body2.invI * r2.x * r2.y;
+        K3.col2.y = body2.invI * r2.x * r2.x;
+        let K = Mat22.add(Mat22.add(K1, K2), K3);
+        K.col1.x += this.softness;
+        K.col2.y += this.softness;
+        this.M = Mat22.invert(K);
+        let p1 = Vec2.add(body1.position, r1);
+        let p2 = Vec2.add(body2.position, r2);
+        let dp = Vec2.sub(p2, p1);
+        if (this.world.positionCorrection) {
+            this.bias = Vec2.mulSV(-this.biasFactor, Vec2.mulSV(inverseDelta, dp));
+        }
+        else {
+            this.bias.set(0, 0);
+        }
+        if (this.world.warmStarting) {
+            // Apply accumulated impulse.
+            body1.velocity.sub(Vec2.mulSV(body1.invMass, this.P));
+            body1.angularVelocity -= body1.invI * Vec2.crossVV(r1, this.P);
+            body2.velocity.add(Vec2.mulSV(body2.invMass, this.P));
+            body2.angularVelocity += body2.invI * Vec2.crossVV(r2, this.P);
+        }
+        else {
+            this.P.set(0, 0);
+        }
+        this.r1 = r1;
+        this.r2 = r2;
+    }
+    applyImpulse() {
+        const body1 = this.body1;
+        const body2 = this.body2;
+        const r1 = this.r1;
+        const r2 = this.r2;
+        let dv = Vec2.sub(Vec2.sub(Vec2.add(body2.velocity, Vec2.crossSV(body2.angularVelocity, r2)), body1.velocity), Vec2.crossSV(body1.angularVelocity, r1));
+        let impulse = new Vec2();
+        impulse = Mat22.mulMV(this.M, Vec2.sub(Vec2.sub(this.bias, dv), Vec2.mulSV(this.softness, this.P)));
+        body1.velocity.sub(Vec2.mulSV(body1.invMass, impulse));
+        body1.angularVelocity -= body1.invI * Vec2.crossVV(r1, impulse);
+        body2.velocity.add(Vec2.mulSV(body2.invMass, impulse));
+        body2.angularVelocity += body2.invI * Vec2.crossVV(r2, impulse);
+        this.P.add(impulse);
+    }
+}
+
+function Clamp(a, low, high) {
+    return Math.max(low, Math.min(a, high));
+}
+
+/**
+ * Copyright (c) 2006-2007 Erin Catto http://www.gphysics.com
+ *
+ * Permission to use, copy, modify, distribute and sell this software
+ * and its documentation for any purpose is hereby granted without fee,
+ * provided that the above copyright notice appear in all copies.
+ * Erin Catto makes no representations about the suitability
+ * of this software for any purpose.
+ * It is provided "as is" without express or implied warranty.
+ *
+ * Ported to TypeScript by Richard Davey, 2020.
+ */
+var Axis;
+(function (Axis) {
+    Axis[Axis["FACE_A_X"] = 0] = "FACE_A_X";
+    Axis[Axis["FACE_A_Y"] = 1] = "FACE_A_Y";
+    Axis[Axis["FACE_B_X"] = 2] = "FACE_B_X";
+    Axis[Axis["FACE_B_Y"] = 3] = "FACE_B_Y";
+})(Axis || (Axis = {}));
+
+/**
+ * Copyright (c) 2006-2007 Erin Catto http://www.gphysics.com
+ *
+ * Permission to use, copy, modify, distribute and sell this software
+ * and its documentation for any purpose is hereby granted without fee,
+ * provided that the above copyright notice appear in all copies.
+ * Erin Catto makes no representations about the suitability
+ * of this software for any purpose.
+ * It is provided "as is" without express or implied warranty.
+ *
+ * Ported to TypeScript by Richard Davey, 2020.
+ */
+var EdgeNumbers;
+(function (EdgeNumbers) {
+    EdgeNumbers[EdgeNumbers["NO_EDGE"] = 0] = "NO_EDGE";
+    EdgeNumbers[EdgeNumbers["EDGE1"] = 1] = "EDGE1";
+    EdgeNumbers[EdgeNumbers["EDGE2"] = 2] = "EDGE2";
+    EdgeNumbers[EdgeNumbers["EDGE3"] = 3] = "EDGE3";
+    EdgeNumbers[EdgeNumbers["EDGE4"] = 4] = "EDGE4";
+})(EdgeNumbers || (EdgeNumbers = {}));
+
+/**
+ * Copyright (c) 2006-2007 Erin Catto http://www.gphysics.com
+ *
+ * Permission to use, copy, modify, distribute and sell this software
+ * and its documentation for any purpose is hereby granted without fee,
+ * provided that the above copyright notice appear in all copies.
+ * Erin Catto makes no representations about the suitability
+ * of this software for any purpose.
+ * It is provided "as is" without express or implied warranty.
+ *
+ * Ported to TypeScript by Richard Davey, 2020.
+ */
+class Edges {
+    constructor() {
+        this.inEdge1 = EdgeNumbers.NO_EDGE;
+        this.outEdge1 = EdgeNumbers.NO_EDGE;
+        this.inEdge2 = EdgeNumbers.NO_EDGE;
+        this.outEdge2 = EdgeNumbers.NO_EDGE;
+    }
+}
+
+/**
+ * Copyright (c) 2006-2007 Erin Catto http://www.gphysics.com
+ *
+ * Permission to use, copy, modify, distribute and sell this software
+ * and its documentation for any purpose is hereby granted without fee,
+ * provided that the above copyright notice appear in all copies.
+ * Erin Catto makes no representations about the suitability
+ * of this software for any purpose.
+ * It is provided "as is" without express or implied warranty.
+ *
+ * Ported to TypeScript by Richard Davey, 2020.
+ */
+class FeaturePair {
+    constructor() {
+        this.e = new Edges();
+        this.value = 0;
+    }
+    flip() {
+        const edges = this.e;
+        const tempIn = edges.inEdge1;
+        const tempOut = edges.outEdge1;
+        edges.inEdge1 = edges.inEdge2;
+        edges.inEdge2 = tempIn;
+        edges.outEdge1 = edges.outEdge2;
+        edges.outEdge2 = tempOut;
+    }
+}
+
+/**
+ * Copyright (c) 2006-2007 Erin Catto http://www.gphysics.com
+ *
+ * Permission to use, copy, modify, distribute and sell this software
+ * and its documentation for any purpose is hereby granted without fee,
+ * provided that the above copyright notice appear in all copies.
+ * Erin Catto makes no representations about the suitability
+ * of this software for any purpose.
+ * It is provided "as is" without express or implied warranty.
+ *
+ * Ported to TypeScript by Richard Davey, 2020.
+ */
+class ClipVertex {
+    constructor() {
+        this.v = new Vec2();
+        this.fp = new FeaturePair();
+    }
+}
+
+/**
+ * Copyright (c) 2006-2007 Erin Catto http://www.gphysics.com
+ *
+ * Permission to use, copy, modify, distribute and sell this software
+ * and its documentation for any purpose is hereby granted without fee,
+ * provided that the above copyright notice appear in all copies.
+ * Erin Catto makes no representations about the suitability
+ * of this software for any purpose.
+ * It is provided "as is" without express or implied warranty.
+ *
+ * Ported to TypeScript by Richard Davey, 2020.
+ */
+function ComputeIncidentEdge(c, h, pos, Rot, normal) {
+    //  The normal is from the reference box
+    //  Convert it to the incident box frame and flip sign
+    let RotT = Mat22.transpose(Rot);
+    let n = Vec2.neg(Mat22.mulMV(RotT, normal));
+    let nAbs = Vec2.abs(n);
+    const clipVertex0 = new ClipVertex();
+    const clipVertex1 = new ClipVertex();
+    if (nAbs.x > nAbs.y) {
+        if (Math.sign(n.x) > 0) {
+            clipVertex0.v.set(h.x, -h.y);
+            clipVertex0.fp.e.inEdge2 = EdgeNumbers.EDGE3;
+            clipVertex0.fp.e.outEdge2 = EdgeNumbers.EDGE4;
+            clipVertex1.v.set(h.x, h.y);
+            clipVertex1.fp.e.inEdge2 = EdgeNumbers.EDGE4;
+            clipVertex1.fp.e.outEdge2 = EdgeNumbers.EDGE1;
+        }
+        else {
+            clipVertex0.v.set(-h.x, h.y);
+            clipVertex0.fp.e.inEdge2 = EdgeNumbers.EDGE1;
+            clipVertex0.fp.e.outEdge2 = EdgeNumbers.EDGE2;
+            clipVertex1.v.set(-h.x, -h.y);
+            clipVertex1.fp.e.inEdge2 = EdgeNumbers.EDGE2;
+            clipVertex1.fp.e.outEdge2 = EdgeNumbers.EDGE3;
+        }
+    }
+    else {
+        if (Math.sign(n.y) > 0) {
+            clipVertex0.v.set(h.x, h.y);
+            clipVertex0.fp.e.inEdge2 = EdgeNumbers.EDGE4;
+            clipVertex0.fp.e.outEdge2 = EdgeNumbers.EDGE1;
+            clipVertex1.v.set(-h.x, h.y);
+            clipVertex1.fp.e.inEdge2 = EdgeNumbers.EDGE1;
+            clipVertex1.fp.e.outEdge2 = EdgeNumbers.EDGE2;
+        }
+        else {
+            clipVertex0.v.set(-h.x, -h.y);
+            clipVertex0.fp.e.inEdge2 = EdgeNumbers.EDGE2;
+            clipVertex0.fp.e.outEdge2 = EdgeNumbers.EDGE3;
+            clipVertex1.v.set(h.x, -h.y);
+            clipVertex1.fp.e.inEdge2 = EdgeNumbers.EDGE3;
+            clipVertex1.fp.e.outEdge2 = EdgeNumbers.EDGE4;
+        }
+    }
+    clipVertex0.v = Vec2.add(pos, Mat22.mulMV(Rot, clipVertex0.v));
+    clipVertex1.v = Vec2.add(pos, Mat22.mulMV(Rot, clipVertex1.v));
+    c[0] = clipVertex0;
+    c[1] = clipVertex1;
+}
+
+/**
+ * Copyright (c) 2006-2007 Erin Catto http://www.gphysics.com
+ *
+ * Permission to use, copy, modify, distribute and sell this software
+ * and its documentation for any purpose is hereby granted without fee,
+ * provided that the above copyright notice appear in all copies.
+ * Erin Catto makes no representations about the suitability
+ * of this software for any purpose.
+ * It is provided "as is" without express or implied warranty.
+ *
+ * Ported to TypeScript by Richard Davey, 2020.
+ */
+class Contact {
+    constructor() {
+        this.position = new Vec2();
+        this.normal = new Vec2();
+        this.r1 = new Vec2();
+        this.r2 = new Vec2();
+        this.separation = 0;
+        this.Pn = 0;
+        this.Pt = 0;
+        this.Pnb = 0;
+        this.massNormal = 0;
+        this.massTangent = 0;
+        this.bias = 0;
+        this.feature = new FeaturePair();
+    }
+}
+
+/**
+ * Copyright (c) 2006-2007 Erin Catto http://www.gphysics.com
+ *
+ * Permission to use, copy, modify, distribute and sell this software
+ * and its documentation for any purpose is hereby granted without fee,
+ * provided that the above copyright notice appear in all copies.
+ * Erin Catto makes no representations about the suitability
+ * of this software for any purpose.
+ * It is provided "as is" without express or implied warranty.
+ *
+ * Ported to TypeScript by Richard Davey, 2020.
+ */
+function ClipSegmentToLine(vOut, vIn, normal, offset, clipEdge) {
+    //  Start with no output points
+    let numOut = 0;
+    // Calculate the distance of end points to the line
+    let distance0 = Vec2.dot(normal, vIn[0].v) - offset;
+    let distance1 = Vec2.dot(normal, vIn[1].v) - offset;
+    // If the points are behind the plane
+    if (distance0 <= 0) {
+        vOut[numOut] = vIn[0];
+        numOut++;
+    }
+    if (distance1 <= 0) {
+        vOut[numOut] = vIn[1];
+        numOut++;
+    }
+    //  If the points are on different sides of the plane
+    if (distance0 * distance1 < 0) {
+        // Find intersection point of edge and plane
+        let interp = distance0 / (distance0 - distance1);
+        vOut[numOut] = new ClipVertex();
+        vOut[numOut].v = Vec2.add(vIn[0].v, Vec2.mulSV(interp, Vec2.sub(vIn[1].v, vIn[0].v)));
+        if (distance0 > 0) {
+            vOut[numOut].fp = vIn[0].fp;
+            vOut[numOut].fp.e.inEdge1 = clipEdge;
+            vOut[numOut].fp.e.inEdge2 = EdgeNumbers.NO_EDGE;
+        }
+        else {
+            vOut[numOut].fp = vIn[1].fp;
+            vOut[numOut].fp.e.outEdge1 = clipEdge;
+            vOut[numOut].fp.e.outEdge2 = EdgeNumbers.NO_EDGE;
+        }
+        numOut++;
+    }
+    return numOut;
+}
+
+/**
+ * Copyright (c) 2006-2007 Erin Catto http://www.gphysics.com
+ *
+ * Permission to use, copy, modify, distribute and sell this software
+ * and its documentation for any purpose is hereby granted without fee,
+ * provided that the above copyright notice appear in all copies.
+ * Erin Catto makes no representations about the suitability
+ * of this software for any purpose.
+ * It is provided "as is" without express or implied warranty.
+ *
+ * Ported to TypeScript by Richard Davey, 2020.
+ */
+// Box vertex and edge numbering:
+//
+//        ^ y
+//        |
+//        e1
+//   v2 ------ v1
+//    |        |
+// e2 |        | e4  --> x
+//    |        |
+//   v3 ------ v4
+//        e3
+function Collide(contacts, bodyA, bodyB) {
+    // Setup
+    let hA = Vec2.mulSV(0.5, bodyA.width); // half the width of bodyA
+    let hB = Vec2.mulSV(0.5, bodyB.width); // half the width of bodyB
+    let posA = bodyA.position;
+    let posB = bodyB.position;
+    let RotA = new Mat22(bodyA.rotation);
+    let RotB = new Mat22(bodyB.rotation);
+    let RotAT = Mat22.transpose(RotA);
+    let RotBT = Mat22.transpose(RotB);
+    let dp = Vec2.sub(posB, posA);
+    let dA = Mat22.mulMV(RotAT, dp);
+    let dB = Mat22.mulMV(RotBT, dp);
+    let C = Mat22.mulMM(RotAT, RotB);
+    let absC = Mat22.abs(C);
+    let absCT = Mat22.transpose(absC);
+    // Box A faces
+    let faceA = Vec2.sub(Vec2.sub(Vec2.abs(dA), hA), Mat22.mulMV(absC, hB));
+    if (faceA.x > 0 || faceA.y > 0) {
+        return 0;
+    }
+    // Box B faces
+    let faceB = Vec2.sub(Vec2.sub(Vec2.abs(dB), Mat22.mulMV(absCT, hA)), hB);
+    if (faceB.x > 0 || faceB.y > 0) {
+        return 0;
+    }
+    //  Find best axis
+    // Box A faces
+    let axis = Axis.FACE_A_X;
+    let separation = faceA.x;
+    let normal = (dA.x > 0) ? RotA.col1 : Vec2.neg(RotA.col1);
+    const RELATIVE_TOL = 0.95;
+    const ABSOLUTE_TOL = 0.01;
+    if (faceA.y > RELATIVE_TOL * separation + ABSOLUTE_TOL * hA.y) {
+        axis = Axis.FACE_A_Y;
+        separation = faceA.y;
+        normal = (dA.y > 0) ? RotA.col2 : Vec2.neg(RotA.col2);
+    }
+    // Box B faces
+    if (faceB.x > RELATIVE_TOL * separation + ABSOLUTE_TOL * hB.x) {
+        axis = Axis.FACE_B_X;
+        separation = faceB.x;
+        normal = (dB.x > 0) ? RotB.col1 : Vec2.neg(RotB.col1);
+    }
+    if (faceB.y > RELATIVE_TOL * separation + ABSOLUTE_TOL * hB.y) {
+        axis = Axis.FACE_B_Y;
+        separation = faceB.y;
+        normal = (dB.y > 0) ? RotB.col2 : Vec2.neg(RotB.col2);
+    }
+    //  Setup clipping plane data based on the separating axis
+    let frontNormal;
+    let sideNormal;
+    let incidentEdge = [];
+    let front;
+    let negSide;
+    let posSide;
+    let negEdge;
+    let posEdge;
+    let side;
+    //  Compute the clipping lines and the line segment to be clipped.
+    switch (axis) {
+        case Axis.FACE_A_X:
+            frontNormal = normal;
+            front = Vec2.dot(posA, frontNormal) + hA.x;
+            sideNormal = RotA.col2;
+            side = Vec2.dot(posA, sideNormal);
+            negSide = -side + hA.y;
+            posSide = side + hA.y;
+            negEdge = EdgeNumbers.EDGE3;
+            posEdge = EdgeNumbers.EDGE1;
+            ComputeIncidentEdge(incidentEdge, hB, posB, RotB, frontNormal);
+            break;
+        case Axis.FACE_A_Y:
+            frontNormal = normal;
+            front = Vec2.dot(posA, frontNormal) + hA.y;
+            sideNormal = RotA.col1;
+            side = Vec2.dot(posA, sideNormal);
+            negSide = -side + hA.x;
+            posSide = side + hA.x;
+            negEdge = EdgeNumbers.EDGE2;
+            posEdge = EdgeNumbers.EDGE4;
+            ComputeIncidentEdge(incidentEdge, hB, posB, RotB, frontNormal);
+            break;
+        case Axis.FACE_B_X:
+            frontNormal = Vec2.neg(normal);
+            front = Vec2.dot(posB, frontNormal) + hB.x;
+            sideNormal = RotB.col2;
+            side = Vec2.dot(posB, sideNormal);
+            negSide = -side + hB.y;
+            posSide = side + hB.y;
+            negEdge = EdgeNumbers.EDGE3;
+            posEdge = EdgeNumbers.EDGE1;
+            ComputeIncidentEdge(incidentEdge, hA, posA, RotA, frontNormal);
+            break;
+        case Axis.FACE_B_Y:
+            frontNormal = Vec2.neg(normal);
+            front = Vec2.dot(posB, frontNormal) + hB.y;
+            sideNormal = RotB.col1;
+            side = Vec2.dot(posB, sideNormal);
+            negSide = -side + hB.x;
+            posSide = side + hB.x;
+            negEdge = EdgeNumbers.EDGE2;
+            posEdge = EdgeNumbers.EDGE4;
+            ComputeIncidentEdge(incidentEdge, hA, posA, RotA, frontNormal);
+            break;
+    }
+    //  Clip other face with 5 box planes (1 face plane, 4 edge planes)
+    let clipPoints1 = [];
+    let clipPoints2 = [];
+    //  Clip to box side 1
+    let np = ClipSegmentToLine(clipPoints1, incidentEdge, Vec2.neg(sideNormal), negSide, negEdge);
+    if (np < 2) {
+        return 0;
+    }
+    //  Clip to negative box side 1
+    np = ClipSegmentToLine(clipPoints2, clipPoints1, sideNormal, posSide, posEdge);
+    if (np < 2) {
+        return 0;
+    }
+    // Now clipPoints2 contains the clipping points.
+    // Due to roundoff, it is possible that clipping removes all points.
+    let numContacts = 0;
+    for (let i = 0; i < 2; i++) {
+        let separation = Vec2.dot(frontNormal, clipPoints2[i].v) - front;
+        if (separation <= 0) {
+            contacts[numContacts] = new Contact();
+            contacts[numContacts].separation = separation;
+            contacts[numContacts].normal = normal;
+            // slide contact point onto reference face (easy to cull)
+            contacts[numContacts].position = Vec2.sub(clipPoints2[i].v, Vec2.mulSV(separation, frontNormal));
+            contacts[numContacts].feature = clipPoints2[i].fp;
+            if (axis === Axis.FACE_B_X || axis === Axis.FACE_B_Y) {
+                contacts[numContacts].feature.flip();
+            }
+            numContacts++;
+        }
+    }
+    return numContacts;
+}
+
+/**
+ * Copyright (c) 2006-2007 Erin Catto http://www.gphysics.com
+ *
+ * Permission to use, copy, modify, distribute and sell this software
+ * and its documentation for any purpose is hereby granted without fee,
+ * provided that the above copyright notice appear in all copies.
+ * Erin Catto makes no representations about the suitability
+ * of this software for any purpose.
+ * It is provided "as is" without express or implied warranty.
+ *
+ * Ported to TypeScript by Richard Davey, 2020.
+ */
+class Arbiter {
+    constructor(world, body1, body2) {
+        this.world = world;
+        if (body1.id < body2.id) {
+            this.body1 = body1;
+            this.body2 = body2;
+        }
+        else {
+            this.body1 = body2;
+            this.body2 = body1;
+        }
+        this.contacts = [];
+        this.numContacts = Collide(this.contacts, this.body1, this.body2);
+        this.friction = Math.sqrt(this.body1.friction * this.body2.friction);
+    }
+    update(newContacts, numNewContacts) {
+        let mergedContacts = [];
+        let contacts = this.contacts;
+        let numContacts = this.numContacts;
+        let warmStarting = this.world.warmStarting;
+        for (let i = 0; i < numNewContacts; i++) {
+            let cNew = newContacts[i];
+            let k = -1;
+            for (let j = 0; j < numContacts; j++) {
+                let cOld = contacts[j];
+                if (cNew.feature.value === cOld.feature.value) {
+                    k = j;
+                    break;
+                }
+            }
+            if (k > -1) {
+                let cOld = contacts[k];
+                if (warmStarting) {
+                    cNew.Pn = cOld.Pn;
+                    cNew.Pt = cOld.Pt;
+                    cNew.Pnb = cOld.Pnb;
+                }
+                else {
+                    cNew.Pn = 0;
+                    cNew.Pt = 0;
+                    cNew.Pnb = 0;
+                }
+                mergedContacts[i] = cNew;
+            }
+            else {
+                mergedContacts[i] = newContacts[i];
+            }
+        }
+        this.contacts = mergedContacts;
+        this.numContacts = numNewContacts;
+    }
+    preStep(inverseDelta) {
+        //  slop
+        const allowedPenetration = 0.01;
+        let contacts = this.contacts;
+        let numContacts = this.numContacts;
+        let biasFactor = (this.world.positionCorrection) ? 0.2 : 0;
+        let body1 = this.body1;
+        let body2 = this.body2;
+        let accumulateImpulses = this.world.accumulateImpulses;
+        for (let i = 0; i < numContacts; i++) {
+            let c = contacts[i];
+            let r1 = Vec2.sub(c.position, body1.position);
+            let r2 = Vec2.sub(c.position, body2.position);
+            //  Precompute normal mass, tangent mass and bias
+            let rn1 = Vec2.dot(r1, c.normal);
+            let rn2 = Vec2.dot(r2, c.normal);
+            let normal = body1.invMass + body2.invMass;
+            normal += body1.invI * (Vec2.dot(r1, r1) - rn1 * rn1) + body2.invI * (Vec2.dot(r2, r2) - rn2 * rn2);
+            c.massNormal = 1 / normal;
+            let tangent = Vec2.crossVS(c.normal, 1);
+            let rt1 = Vec2.dot(r1, tangent);
+            let rt2 = Vec2.dot(r2, tangent);
+            let kTangent = body1.invMass + body2.invMass;
+            kTangent += body1.invI * (Vec2.dot(r1, r1) - rt1 * rt1) + body2.invI * (Vec2.dot(r2, r2) - rt2 * rt2);
+            c.massTangent = 1 / kTangent;
+            c.bias = -biasFactor * inverseDelta * Math.min(0, c.separation + allowedPenetration);
+            if (accumulateImpulses) {
+                //  Normal + Friction impulse
+                let P = Vec2.add(Vec2.mulSV(c.Pn, c.normal), Vec2.mulSV(c.Pt, tangent));
+                body1.velocity.sub(Vec2.mulSV(body1.invMass, P));
+                body1.angularVelocity -= body1.invI * Vec2.crossVV(r1, P);
+                body2.velocity.add(Vec2.mulSV(body2.invMass, P));
+                body2.angularVelocity += body2.invI * Vec2.crossVV(r2, P);
+            }
+        }
+    }
+    applyImpulse() {
+        let contacts = this.contacts;
+        let numContacts = this.numContacts;
+        let body1 = this.body1;
+        let body2 = this.body2;
+        let accumulateImpulses = this.world.accumulateImpulses;
+        for (let i = 0; i < numContacts; i++) {
+            let c = contacts[i];
+            c.r1 = Vec2.sub(c.position, body1.position);
+            c.r2 = Vec2.sub(c.position, body2.position);
+            //  Relative velocity at contact
+            let dv = Vec2.sub(Vec2.sub(Vec2.add(body2.velocity, Vec2.crossSV(body2.angularVelocity, c.r2)), body1.velocity), Vec2.crossSV(body1.angularVelocity, c.r1));
+            //  Compute normal impulse
+            let vn = Vec2.dot(dv, c.normal);
+            let dPn = c.massNormal * (-vn + c.bias);
+            if (accumulateImpulses) {
+                //  Clamp accumulated impulse
+                let Pn0 = c.Pn;
+                c.Pn = Math.max(Pn0 + dPn, 0);
+                dPn = c.Pn - Pn0;
+            }
+            else {
+                dPn = Math.max(dPn, 0);
+            }
+            //  Apply contact impulse
+            let Pn = Vec2.mulSV(dPn, c.normal);
+            body1.velocity.sub(Vec2.mulSV(body1.invMass, Pn));
+            body1.angularVelocity -= body1.invI * Vec2.crossVV(c.r1, Pn);
+            body2.velocity.add(Vec2.mulSV(body2.invMass, Pn));
+            body2.angularVelocity += body2.invI * Vec2.crossVV(c.r2, Pn);
+            //  Relative velocity at contact
+            dv = Vec2.sub(Vec2.sub(Vec2.add(body2.velocity, Vec2.crossSV(body2.angularVelocity, c.r2)), body1.velocity), Vec2.crossSV(body1.angularVelocity, c.r1));
+            let tangent = Vec2.crossVS(c.normal, 1);
+            let vt = Vec2.dot(dv, tangent);
+            let dPt = c.massTangent * (-vt);
+            if (accumulateImpulses) {
+                // Compute friction impulse
+                let maxPt = this.friction * c.Pn;
+                // Clamp friction
+                let oldTangentImpulse = c.Pt;
+                c.Pt = Clamp(oldTangentImpulse + dPt, -maxPt, maxPt);
+                dPt = c.Pt - oldTangentImpulse;
+            }
+            else {
+                let maxPt = this.friction * dPn;
+                dPt = Clamp(dPt, -maxPt, maxPt);
+            }
+            // Apply contact impulse
+            let Pt = Vec2.mulSV(dPt, tangent);
+            body1.velocity.sub(Vec2.mulSV(body1.invMass, Pt));
+            body1.angularVelocity -= body1.invI * Vec2.crossVV(c.r1, Pt);
+            body2.velocity.add(Vec2.mulSV(body2.invMass, Pt));
+            body2.angularVelocity += body2.invI * Vec2.crossVV(c.r2, Pt);
+        }
+    }
+}
+
+/**
+ * Copyright (c) 2006-2007 Erin Catto http://www.gphysics.com
+ *
+ * Permission to use, copy, modify, distribute and sell this software
+ * and its documentation for any purpose is hereby granted without fee,
+ * provided that the above copyright notice appear in all copies.
+ * Erin Catto makes no representations about the suitability
+ * of this software for any purpose.
+ * It is provided "as is" without express or implied warranty.
+ *
+ * Ported to TypeScript by Richard Davey, 2020.
+ */
+class ArbiterKey {
+    constructor(bodyA, bodyB) {
+        this.bodyA = bodyA;
+        this.bodyB = bodyB;
+        this.value = bodyA.id + ':' + bodyB.id;
+    }
+}
+
+/**
+ * Copyright (c) 2006-2007 Erin Catto http://www.gphysics.com
+ *
+ * Permission to use, copy, modify, distribute and sell this software
+ * and its documentation for any purpose is hereby granted without fee,
+ * provided that the above copyright notice appear in all copies.
+ * Erin Catto makes no representations about the suitability
+ * of this software for any purpose.
+ * It is provided "as is" without express or implied warranty.
+ *
+ * Ported to TypeScript by Richard Davey, 2020.
+ */
+class ArbiterPair {
+    constructor(key, arbiter) {
+        this.first = key;
+        this.second = arbiter;
+    }
+}
+
+/**
+ * Copyright (c) 2006-2007 Erin Catto http://www.gphysics.com
+ *
+ * Permission to use, copy, modify, distribute and sell this software
+ * and its documentation for any purpose is hereby granted without fee,
+ * provided that the above copyright notice appear in all copies.
+ * Erin Catto makes no representations about the suitability
+ * of this software for any purpose.
+ * It is provided "as is" without express or implied warranty.
+ *
+ * Ported to TypeScript by Richard Davey, 2020.
+ */
+class World {
+    constructor(gravity = new Vec2(0, 9.807), iterations = 10) {
+        this.bodyIdSeed = 0;
+        this.bodies = [];
+        this.joints = [];
+        this.arbiters = [];
+        this.gravity = new Vec2();
+        this.iterations = 10;
+        this.accumulateImpulses = true;
+        this.warmStarting = true;
+        this.positionCorrection = true;
+        this.gravity.x = gravity.x;
+        this.gravity.y = gravity.y;
+        this.iterations = iterations;
+    }
+    addBody(body) {
+        this.bodyIdSeed++;
+        body.id = this.bodyIdSeed;
+        this.bodies.push(body);
+        return this;
+    }
+    addJoint(joint) {
+        this.joints.push(joint);
+        return this;
+    }
+    clear() {
+        this.bodies = [];
+        this.joints = [];
+        this.arbiters = [];
+        return this;
+    }
+    /**
+     * Determine overlapping bodies and update contact points
+     */
+    broadPhase() {
+        let bodies = this.bodies;
+        let length = bodies.length;
+        let arbiters = this.arbiters;
+        for (let i = 0; i < length - 1; i++) {
+            let bodyA = bodies[i];
+            for (let j = i + 1; j < length; j++) {
+                let bodyB = bodies[j];
+                if (bodyA.invMass === 0 && bodyB.invMass === 0) {
+                    continue;
+                }
+                let arbiter = new Arbiter(this, bodyA, bodyB);
+                let arbiterKey = new ArbiterKey(bodyA, bodyB);
+                let iter = -1;
+                for (let a = 0; a < arbiters.length; a++) {
+                    if (arbiters[a].first.value === arbiterKey.value) {
+                        iter = a;
+                        break;
+                    }
+                }
+                if (arbiter.numContacts > 0) {
+                    if (iter === -1) {
+                        arbiters.push(new ArbiterPair(arbiterKey, arbiter));
+                    }
+                    else {
+                        arbiters[iter].second.update(arbiter.contacts, arbiter.numContacts);
+                    }
+                }
+                else if (arbiter.numContacts === 0 && iter > -1) {
+                    //  Nuke empty arbiter with no contacts
+                    arbiters.splice(iter, 1);
+                }
+            }
+        }
+    }
+    step(delta) {
+        let inverseDelta = (delta > 0) ? 1 / delta : 0;
+        this.broadPhase();
+        //  Integrate forces
+        const bodies = this.bodies;
+        const gravity = this.gravity;
+        for (let i = 0; i < bodies.length; i++) {
+            let body = bodies[i];
+            if (body.invMass === 0) {
+                continue;
+            }
+            body.velocity.add(Vec2.mulSV(delta, (Vec2.add(gravity, Vec2.mulSV(body.invMass, body.force)))));
+            body.angularVelocity += delta * body.invI * body.torque;
+        }
+        //  Pre-steps
+        const arbiters = this.arbiters;
+        const joints = this.joints;
+        for (let i = 0; i < arbiters.length; i++) {
+            arbiters[i].second.preStep(inverseDelta);
+        }
+        for (let i = 0; i < joints.length; i++) {
+            joints[i].preStep(inverseDelta);
+        }
+        //  Perform iterations
+        for (let i = 0; i < this.iterations; i++) {
+            //  Apply impulse
+            for (let arb = 0; arb < arbiters.length; arb++) {
+                arbiters[arb].second.applyImpulse();
+            }
+            //  Apply joint impulse
+            for (let j = 0; j < joints.length; j++) {
+                joints[j].applyImpulse();
+            }
+        }
+        //  Integrate velocities
+        for (let i = 0; i < bodies.length; i++) {
+            let body = bodies[i];
+            body.position.add(Vec2.mulSV(delta, body.velocity));
+            body.rotation += delta * body.angularVelocity;
+            body.force.set(0, 0);
+            body.torque = 0;
+        }
+    }
+}
+
+export { Body, CanvasRenderer, Joint, Vec2, World };
