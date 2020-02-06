@@ -105,3 +105,29 @@ Frame: 600 = 53,998 vec2s - 36,772 mat22s
 
 This is a 19.6126% decrease on Frame 200 and a massive 43.3389% decrease on Frame 600.
 
+Let's check this against our World.step flow:
+
+Frame 200:
+
+1) 48,163 - World.broadphase
+2) 48,466 - Integrate forces
+3) 49,138 - Arbiters preStep
+4) 49,147 - Joints preStep
+5) 50,107 - Perform aribter and joint iterations
+6) 50,210 - Integrate velocities
+
+Frame 600:
+
+1) 49,287 - World.broadphase
+2) 49,590 - Integrate forces
+3) 51,446 - Arbiters preStep
+4) 51,455 - Joints preStep
+5) 53,895 - Perform aribter and joint iterations
+6) 53,998 - Integrate velocities
+
+At this stage, it doesn't matter if the bodies are in contact or not, we're getting a much more steady count.
+
+## v0.0.8
+
+World.broadphase is clearly the biggest cost here. Let's see how many creations per iteration:
+
