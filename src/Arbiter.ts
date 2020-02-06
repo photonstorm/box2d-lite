@@ -169,14 +169,10 @@ export default class Arbiter
             let r1 = c.r1;
             let r2 = c.r2;
 
-            // c.r1 = Vec2.sub(c.position, body1.position);
-
             r1.set(
                 c.position.x - body1.position.x,
                 c.position.y - body1.position.y
             );
-
-            // c.r2 = Vec2.sub(c.position, body2.position);
 
             r2.set(
                 c.position.x - body2.position.x,
@@ -185,41 +181,23 @@ export default class Arbiter
 
             //  Relative velocity at contact
 
-            // Vec2.crossSV(body2.angularVelocity, c.r2);
-
             let cross1x = -body2.angularVelocity * r2.y;
             let cross1y = body2.angularVelocity * r2.x;
-
-            // Vec2.crossSV(body1.angularVelocity, c.r1)
 
             let cross2x = -body1.angularVelocity * r1.y;
             let cross2y = body1.angularVelocity * r1.x;
 
-            // Vec2.add(body2.velocity, Vec2.crossSV(body2.angularVelocity, c.r2))
-
             let addX = body2.velocity.x + cross1x;
             let addY = body2.velocity.y + cross1y;
-
-            // Vec2.sub(Vec2.add(body2.velocity, Vec2.crossSV(body2.angularVelocity, c.r2)), body1.velocity)
 
             let subX = addX - body1.velocity.x;
             let subY = addY - body1.velocity.y;
 
-            // static crossSV (s: number, v: Vec2): Vec2
-            // {
-            //     return new Vec2(-s * v.y, s * v.x);
-            // }
-
             let dVx = subX - cross2x;
             let dVy = subY - cross2y;
 
-            // let dv = Vec2.sub(
-            //     Vec2.sub(Vec2.add(body2.velocity, Vec2.crossSV(body2.angularVelocity, c.r2)), body1.velocity),
-            //     Vec2.crossSV(body1.angularVelocity, c.r1)
-            // );
-
             //  Compute normal impulse
-            // let vn = Vec2.dot(dv, c.normal);
+
             let vn = Vec2.dotXYV(dVx, dVy, c.normal);
 
             let dPn = c.massNormal * (-vn + c.bias);
@@ -237,38 +215,22 @@ export default class Arbiter
             }
 
             //  Apply contact impulse
-            // let Pn = Vec2.mulSV(dPn, c.normal);
 
             let PnX = dPn * c.normal.x;
             let PnY = dPn * c.normal.y;
 
-            // static mulSV (s: number, v: Vec2): Vec2
-            // {
-            //     return new Vec2(s * v.x, s * v.y);
-            // }
-
-            // body1.velocity.sub(Vec2.mulSV(body1.invMass, Pn));
             body1.velocity.x -= (body1.invMass * PnX);
             body1.velocity.y -= (body1.invMass * PnY);
-
             body1.angularVelocity -= body1.invI * Vec2.crossVXY(c.r1, PnX, PnY);
 
-            // body2.velocity.add(Vec2.mulSV(body2.invMass, Pn));
             body2.velocity.x += (body2.invMass * PnX);
             body2.velocity.y += (body2.invMass * PnY);
-
             body2.angularVelocity += body2.invI * Vec2.crossVXY(c.r2, PnX, PnY);
 
             //  Relative velocity at contact
 
-            // dv = Vec2.sub(
-            //     Vec2.sub(Vec2.add(body2.velocity, Vec2.crossSV(body2.angularVelocity, c.r2)), body1.velocity),
-            //     Vec2.crossSV(body1.angularVelocity, c.r1)
-            // );
-
             let tangent = Vec2.crossVS(c.normal, 1);
 
-            // let vt = Vec2.dot(dv, tangent);
             let vt = Vec2.dotXYV(dVx, dVy, tangent);
 
             let dPt = c.massTangent * (-vt);
@@ -290,21 +252,16 @@ export default class Arbiter
             }
 
             // Apply contact impulse
-            // let Pt = Vec2.mulSV(dPt, tangent);
 
             PnX = dPt * tangent.x;
             PnY = dPt * tangent.y;
 
-            // body1.velocity.sub(Vec2.mulSV(body1.invMass, Pt));
             body1.velocity.x -= (body1.invMass * PnX);
             body1.velocity.y -= (body1.invMass * PnY);
-
             body1.angularVelocity -= body1.invI * Vec2.crossVXY(c.r1, PnX, PnY);
 
-            // body2.velocity.add(Vec2.mulSV(body2.invMass, Pt));
             body2.velocity.x += (body2.invMass * PnX);
             body2.velocity.y += (body2.invMass * PnY);
-
             body2.angularVelocity += body2.invI * Vec2.crossVXY(c.r2, PnX, PnY);
         }
     }
