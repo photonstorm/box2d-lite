@@ -65,6 +65,9 @@ class Vec2 {
     static crossVXY(vA, x, y) {
         return vA.x * y - vA.y * x;
     }
+    static crossXY(x1, y1, x2, y2) {
+        return x1 * y2 - y1 * x2;
+    }
     static crossVS(v, s) {
         return new Vec2(s * v.y, -s * v.x);
     }
@@ -257,7 +260,7 @@ class CanvasRenderer {
         ctx.strokeStyle = 'red';
         ctx.lineWidth = 0.5;
         ctx.beginPath();
-        ctx.arc(contact.position.x, contact.position.y, 2, 0, 2 * Math.PI);
+        ctx.arc(contact.positionX, contact.positionY, 2, 0, 2 * Math.PI);
         ctx.stroke();
     }
     renderJoint(joint, ctx) {
@@ -570,6 +573,7 @@ function ComputeIncidentEdge(c, h, pos, Rot, normalX, normalY) {
     c[1] = clipVertex1;
 }
 
+// import Vec2 from './math/Vec2';
 /**
  * Copyright (c) 2006-2007 Erin Catto http://www.gphysics.com
  *
@@ -583,19 +587,28 @@ function ComputeIncidentEdge(c, h, pos, Rot, normalX, normalY) {
  * Ported to TypeScript by Richard Davey, 2020.
  */
 class Contact {
-    constructor() {
-        this.position = new Vec2();
-        this.normal = new Vec2();
-        this.r1 = new Vec2();
-        this.r2 = new Vec2();
-        this.separation = 0;
+    constructor(separation, normalX, normalY, positionX, positionY, feature) {
+        // this.position = new Vec2();
+        // this.normal = new Vec2();
+        // this.r1 = new Vec2();
+        // this.r2 = new Vec2();
+        this.positionX = positionX;
+        this.positionY = positionY;
+        this.normalX = normalX;
+        this.normalY = normalY;
+        this.r1X = 0;
+        this.r1Y = 0;
+        this.r2X = 0;
+        this.r2Y = 0;
+        this.separation = separation;
         this.Pn = 0;
         this.Pt = 0;
         this.Pnb = 0;
         this.massNormal = 0;
         this.massTangent = 0;
         this.bias = 0;
-        this.feature = new FeaturePair();
+        // this.feature = new FeaturePair();
+        this.feature = feature;
     }
 }
 
@@ -885,11 +898,18 @@ function Collide(contacts, bodyA, bodyB) {
     for (let i = 0; i < 2; i++) {
         let separation = Vec2.dotXYV(frontNormalX, frontNormalY, clipPoints[i].v) - front;
         if (separation <= 0) {
-            contacts[numContacts] = new Contact();
-            contacts[numContacts].separation = separation;
-            contacts[numContacts].normal.set(normalX, normalY);
-            contacts[numContacts].position = new Vec2(clipPoints[i].v.x - (separation * frontNormalX), clipPoints[i].v.y - (separation * frontNormalY));
-            contacts[numContacts].feature = clipPoints[i].fp;
+            contacts[numContacts] = new Contact(separation, normalX, normalY, clipPoints[i].v.x - (separation * frontNormalX), clipPoints[i].v.y - (separation * frontNormalY), clipPoints[i].fp);
+            // contacts[numContacts].separation = separation;
+            // contacts[numContacts].normal.set(normalX, normalY);
+            // contacts[numContacts].position = new Vec2(
+            //     clipPoints[i].v.x - (separation * frontNormalX),
+            //     clipPoints[i].v.y - (separation * frontNormalY)
+            // );
+            // contacts[numContacts].position.set(
+            //     clipPoints[i].v.x - (separation * frontNormalX),
+            //     clipPoints[i].v.y - (separation * frontNormalY)
+            // );
+            // contacts[numContacts].feature = clipPoints[i].fp;
             if (axis === Axis.FACE_B_X || axis === Axis.FACE_B_Y) {
                 contacts[numContacts].feature.flip();
             }
@@ -973,28 +993,60 @@ class Arbiter {
         let accumulateImpulses = this.world.accumulateImpulses;
         for (let i = 0; i < numContacts; i++) {
             let c = contacts[i];
-            let r1 = Vec2.sub(c.position, body1.position);
-            let r2 = Vec2.sub(c.position, body2.position);
+            // let r1: Vec2 = Vec2.sub(c.position, body1.position);
+            let r1X = c.positionX - body1.position.x;
+            let r1Y = c.positionY - body1.position.y;
+            // let r2: Vec2 = Vec2.sub(c.position, body2.position);
+            let r2X = c.positionX - body2.position.x;
+            let r2Y = c.positionY - body2.position.y;
             //  Precompute normal mass, tangent mass and bias
-            let rn1 = Vec2.dot(r1, c.normal);
-            let rn2 = Vec2.dot(r2, c.normal);
+            // let rn1 = Vec2.dot(r1, c.normal);
+            let rn1 = Vec2.dotXY(r1X, r1Y, c.normalX, c.normalY);
+            // let rn2 = Vec2.dot(r2, c.normal);
+            let rn2 = Vec2.dotXY(r2X, r2Y, c.normalX, c.normalY);
             let normal = body1.invMass + body2.invMass;
-            normal += body1.invI * (Vec2.dot(r1, r1) - rn1 * rn1) + body2.invI * (Vec2.dot(r2, r2) - rn2 * rn2);
+            // normal += body1.invI * (Vec2.dot(r1, r1) - rn1 * rn1) + body2.invI * (Vec2.dot(r2, r2) - rn2 * rn2);
+            normal += body1.invI * (Vec2.dotXY(r1X, r1Y, r1X, r1Y) - rn1 * rn1) + body2.invI * (Vec2.dotXY(r2X, r2Y, r2X, r2Y) - rn2 * rn2);
             c.massNormal = 1 / normal;
-            let tangent = Vec2.crossVS(c.normal, 1);
-            let rt1 = Vec2.dot(r1, tangent);
-            let rt2 = Vec2.dot(r2, tangent);
+            // static crossVS (v: Vec2, s: number): Vec2
+            // {
+            //     return new Vec2(s * v.y, -s * v.x);
+            // }
+            // let tangent = Vec2.crossVS(c.normal, 1);
+            let tangentX = c.normalY;
+            let tangentY = -1 * c.normalX;
+            // let rt1 = Vec2.dot(r1, tangent);
+            let rt1 = Vec2.dotXY(r1X, r1Y, tangentX, tangentY);
+            // let rt2 = Vec2.dot(r2, tangent);
+            let rt2 = Vec2.dotXY(r2X, r2Y, tangentX, tangentY);
             let kTangent = body1.invMass + body2.invMass;
-            kTangent += body1.invI * (Vec2.dot(r1, r1) - rt1 * rt1) + body2.invI * (Vec2.dot(r2, r2) - rt2 * rt2);
+            // kTangent += body1.invI * (Vec2.dot(r1, r1) - rt1 * rt1) + body2.invI * (Vec2.dot(r2, r2) - rt2 * rt2);
+            kTangent += body1.invI * (Vec2.dotXY(r1X, r1Y, r1X, r1Y) - rt1 * rt1) + body2.invI * (Vec2.dotXY(r2X, r2Y, r2X, r2Y) - rt2 * rt2);
             c.massTangent = 1 / kTangent;
             c.bias = -biasFactor * inverseDelta * Math.min(0, c.separation + allowedPenetration);
             if (accumulateImpulses) {
                 //  Normal + Friction impulse
-                let P = Vec2.add(Vec2.mulSV(c.Pn, c.normal), Vec2.mulSV(c.Pt, tangent));
-                body1.velocity.sub(Vec2.mulSV(body1.invMass, P));
-                body1.angularVelocity -= body1.invI * Vec2.crossVV(r1, P);
-                body2.velocity.add(Vec2.mulSV(body2.invMass, P));
-                body2.angularVelocity += body2.invI * Vec2.crossVV(r2, P);
+                // let P = Vec2.add(Vec2.mulSV(c.Pn, c.normal), Vec2.mulSV(c.Pt, tangent));
+                // static mulSV (s: number, v: Vec2): Vec2
+                // {
+                //     return new Vec2(s * v.x, s * v.y);
+                // }
+                let pX = (c.Pn * c.normalX) + (c.Pt * tangentX);
+                let pY = (c.Pn * c.normalY) + (c.Pt * tangentY);
+                // body1.velocity.sub(Vec2.mulSV(body1.invMass, P));
+                body1.velocity.x -= (body1.invMass * pX);
+                body1.velocity.y -= (body1.invMass * pY);
+                // body1.angularVelocity -= body1.invI * Vec2.crossVV(r1, P);
+                // static crossVV (vA: Vec2, vB: Vec2): number
+                // {
+                //     return vA.x * vB.y - vA.y * vB.x;
+                // }
+                body1.angularVelocity -= body1.invI * (r1X * pY - r1Y * pX);
+                // body2.velocity.add(Vec2.mulSV(body2.invMass, P));
+                body2.velocity.x += (body2.invMass * pX);
+                body2.velocity.y += (body2.invMass * pY);
+                // body2.angularVelocity += body2.invI * Vec2.crossVV(r2, P);
+                body2.angularVelocity += body2.invI * (r2X * pY - r2Y * pX);
             }
         }
     }
@@ -1006,38 +1058,45 @@ class Arbiter {
         let accumulateImpulses = this.world.accumulateImpulses;
         for (let i = 0; i < numContacts; i++) {
             let c = contacts[i];
+            c.r1X = c.positionX - body1.position.x;
+            c.r1Y = c.positionY - body1.position.y;
+            c.r2X = c.positionX - body2.position.x;
+            c.r2Y = c.positionY - body2.position.y;
+            /*
             let r1 = c.r1;
             let r2 = c.r2;
-            // c.r1 = Vec2.sub(c.position, body1.position);
-            r1.set(c.position.x - body1.position.x, c.position.y - body1.position.y);
-            // c.r2 = Vec2.sub(c.position, body2.position);
-            r2.set(c.position.x - body2.position.x, c.position.y - body2.position.y);
+
+            r1.set(
+                c.position.x - body1.position.x,
+                c.position.y - body1.position.y
+            );
+
+            r2.set(
+                c.position.x - body2.position.x,
+                c.position.y - body2.position.y
+            );
+            */
             //  Relative velocity at contact
-            // Vec2.crossSV(body2.angularVelocity, c.r2);
-            let cross1x = -body2.angularVelocity * r2.y;
-            let cross1y = body2.angularVelocity * r2.x;
-            // Vec2.crossSV(body1.angularVelocity, c.r1)
-            let cross2x = -body1.angularVelocity * r1.y;
-            let cross2y = body1.angularVelocity * r1.x;
-            // Vec2.add(body2.velocity, Vec2.crossSV(body2.angularVelocity, c.r2))
-            let addX = body2.velocity.x + cross1x;
-            let addY = body2.velocity.y + cross1y;
-            // Vec2.sub(Vec2.add(body2.velocity, Vec2.crossSV(body2.angularVelocity, c.r2)), body1.velocity)
-            let subX = addX - body1.velocity.x;
-            let subY = addY - body1.velocity.y;
-            // static crossSV (s: number, v: Vec2): Vec2
-            // {
-            //     return new Vec2(-s * v.y, s * v.x);
-            // }
-            let dVx = subX - cross2x;
-            let dVy = subY - cross2y;
-            // let dv = Vec2.sub(
-            //     Vec2.sub(Vec2.add(body2.velocity, Vec2.crossSV(body2.angularVelocity, c.r2)), body1.velocity),
-            //     Vec2.crossSV(body1.angularVelocity, c.r1)
-            // );
+            // let cross1x = -body2.angularVelocity * r2.y;
+            // let cross1y = body2.angularVelocity * r2.x;
+            // let cross2x = -body1.angularVelocity * r1.y;
+            // let cross2y = body1.angularVelocity * r1.x;
+            // let addX = body2.velocity.x + cross1x;
+            // let addY = body2.velocity.y + cross1y;
+            // let subX = addX - body1.velocity.x;
+            // let subY = addY - body1.velocity.y;
+            let subX = (body2.velocity.x + (-body2.angularVelocity * c.r2Y)) - body1.velocity.x;
+            let subY = (body2.velocity.y + (body2.angularVelocity * c.r2X)) - body1.velocity.y;
+            // let subX = (body2.velocity.x + cross1x) - body1.velocity.x;
+            // let subY = (body2.velocity.y + cross1y) - body1.velocity.y;
+            let dVx = subX - (-body1.angularVelocity * c.r1Y);
+            let dVy = subY - (body1.angularVelocity * c.r1X);
+            // let dVx = subX - cross2x;
+            // let dVy = subY - cross2y;
+            // let dVx = (body2.velocity.x + -body2.angularVelocity * r2.y)
             //  Compute normal impulse
-            // let vn = Vec2.dot(dv, c.normal);
-            let vn = Vec2.dotXYV(dVx, dVy, c.normal);
+            // let vn = Vec2.dotXYV(dVx, dVy, c.normal);
+            let vn = Vec2.dotXY(dVx, dVy, c.normalX, c.normalY);
             let dPn = c.massNormal * (-vn + c.bias);
             if (accumulateImpulses) {
                 //  Clamp accumulated impulse
@@ -1049,29 +1108,23 @@ class Arbiter {
                 dPn = Math.max(dPn, 0);
             }
             //  Apply contact impulse
-            // let Pn = Vec2.mulSV(dPn, c.normal);
-            let PnX = dPn * c.normal.x;
-            let PnY = dPn * c.normal.y;
-            // static mulSV (s: number, v: Vec2): Vec2
-            // {
-            //     return new Vec2(s * v.x, s * v.y);
-            // }
-            // body1.velocity.sub(Vec2.mulSV(body1.invMass, Pn));
+            let PnX = dPn * c.normalX;
+            let PnY = dPn * c.normalY;
             body1.velocity.x -= (body1.invMass * PnX);
             body1.velocity.y -= (body1.invMass * PnY);
-            body1.angularVelocity -= body1.invI * Vec2.crossVXY(c.r1, PnX, PnY);
-            // body2.velocity.add(Vec2.mulSV(body2.invMass, Pn));
+            body1.angularVelocity -= body1.invI * Vec2.crossXY(c.r1X, c.r1Y, PnX, PnY);
             body2.velocity.x += (body2.invMass * PnX);
             body2.velocity.y += (body2.invMass * PnY);
-            body2.angularVelocity += body2.invI * Vec2.crossVXY(c.r2, PnX, PnY);
+            body2.angularVelocity += body2.invI * Vec2.crossXY(c.r2X, c.r2Y, PnX, PnY);
             //  Relative velocity at contact
-            // dv = Vec2.sub(
-            //     Vec2.sub(Vec2.add(body2.velocity, Vec2.crossSV(body2.angularVelocity, c.r2)), body1.velocity),
-            //     Vec2.crossSV(body1.angularVelocity, c.r1)
-            // );
-            let tangent = Vec2.crossVS(c.normal, 1);
-            // let vt = Vec2.dot(dv, tangent);
-            let vt = Vec2.dotXYV(dVx, dVy, tangent);
+            // let tangent = Vec2.crossVS(c.normal, 1);
+            // static crossVS (v: Vec2, s: number): Vec2
+            // {
+            //     return new Vec2(s * v.y, -s * v.x);
+            // }
+            let tangentX = c.normalY;
+            let tangentY = -1 * c.normalX;
+            let vt = Vec2.dotXY(dVx, dVy, tangentX, tangentY);
             let dPt = c.massTangent * (-vt);
             if (accumulateImpulses) {
                 // Compute friction impulse
@@ -1086,17 +1139,14 @@ class Arbiter {
                 dPt = Clamp(dPt, -maxPt, maxPt);
             }
             // Apply contact impulse
-            // let Pt = Vec2.mulSV(dPt, tangent);
-            PnX = dPt * tangent.x;
-            PnY = dPt * tangent.y;
-            // body1.velocity.sub(Vec2.mulSV(body1.invMass, Pt));
+            PnX = dPt * tangentX;
+            PnY = dPt * tangentY;
             body1.velocity.x -= (body1.invMass * PnX);
             body1.velocity.y -= (body1.invMass * PnY);
-            body1.angularVelocity -= body1.invI * Vec2.crossVXY(c.r1, PnX, PnY);
-            // body2.velocity.add(Vec2.mulSV(body2.invMass, Pt));
+            body1.angularVelocity -= body1.invI * Vec2.crossXY(c.r1X, c.r1Y, PnX, PnY);
             body2.velocity.x += (body2.invMass * PnX);
             body2.velocity.y += (body2.invMass * PnY);
-            body2.angularVelocity += body2.invI * Vec2.crossVXY(c.r2, PnX, PnY);
+            body2.angularVelocity += body2.invI * Vec2.crossXY(c.r2X, c.r2X, PnX, PnY);
         }
     }
 }
@@ -1224,6 +1274,7 @@ class World {
     step(delta) {
         let inverseDelta = (delta > 0) ? 1 / delta : 0;
         this.broadPhase();
+        window['step1'] = window['vec2Total'];
         //  Integrate forces
         const bodies = this.bodies;
         const gravity = this.gravity;
@@ -1235,15 +1286,18 @@ class World {
             body.velocity.add(Vec2.mulSV(delta, (Vec2.add(gravity, Vec2.mulSV(body.invMass, body.force)))));
             body.angularVelocity += delta * body.invI * body.torque;
         }
+        window['step2'] = window['vec2Total'];
         //  Pre-steps
         const arbiters = this.arbiters;
         const joints = this.joints;
         for (let i = 0; i < arbiters.length; i++) {
             arbiters[i].second.preStep(inverseDelta);
         }
+        window['step3'] = window['vec2Total'];
         for (let i = 0; i < joints.length; i++) {
             joints[i].preStep(inverseDelta);
         }
+        window['step4'] = window['vec2Total'];
         //  Perform iterations
         for (let i = 0; i < this.iterations; i++) {
             //  Apply impulse
@@ -1255,6 +1309,7 @@ class World {
                 joints[j].applyImpulse();
             }
         }
+        window['step5'] = window['vec2Total'];
         //  Integrate velocities
         for (let i = 0; i < bodies.length; i++) {
             let body = bodies[i];
@@ -1263,6 +1318,7 @@ class World {
             body.force.set(0, 0);
             body.torque = 0;
         }
+        window['step6'] = window['vec2Total'];
     }
 }
 
@@ -1306,6 +1362,7 @@ let frame600Text = document.getElementById('frame600');
 document.getElementById('pause').addEventListener('click', () => {
     pause = (pause) ? false : true;
 });
+console.log('start-up: ', window['vec2Total'], window['mat22Total']);
 function loop() {
     window['vec2Total'] = 0;
     window['mat22Total'] = 0;
@@ -1317,10 +1374,15 @@ function loop() {
         mat22Text.value = window['mat22Total'].toString();
         if (frame === 200) {
             // showStepStats(frame200Text);
+            // console.log('200');
+            // showBodyStats();
             frame200Text.value = 'vec2: ' + vec2Text.value + ' mat22: ' + mat22Text.value + ' arbiters: ' + world.arbiters.length + ' bodies: ' + world.bodies.length;
         }
         else if (frame === 600) {
             // showStepStats(frame600Text);
+            // console.log('');
+            // console.log('600');
+            // showBodyStats();
             frame600Text.value = 'vec2: ' + vec2Text.value + ' mat22: ' + mat22Text.value + ' arbiters: ' + world.arbiters.length + ' bodies: ' + world.bodies.length;
         }
         frame++;

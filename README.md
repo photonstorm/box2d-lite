@@ -129,5 +129,18 @@ At this stage, it doesn't matter if the bodies are in contact or not, we're gett
 
 ## v0.0.8
 
-World.broadphase is clearly the biggest cost here. Let's see how many creations per iteration:
+When the test starts-up there are 533 vec2 instances and 7 mat22 instances, this is before the World has even stepped once, so it's just what the bodies, joints, etc need to exist.
+
+World.broadphase is clearly the biggest cost here because of the Collide function.
+
+It creates 4 new vec2s _per_ Contact instance. Let's see if we can get that lower.
+
+Ok, after replacing the Contact vec2s with numbers and inlining a load of Arbiter math, we've got:
+
+Frame: 200 = 48,236 vec2s - 36,772 mat22s
+Frame: 600 = 48,666 vec2s - 36,772 mat22s
+
+This is a 3.93149% decrease on Frame 200 and 9.87444% decrease on Frame 600.
+
+## v0.0.9
 
