@@ -43,22 +43,31 @@ export default function ClipSegmentToLine (vOut: ClipVertex[], vIn: ClipVertex[]
         // Find intersection point of edge and plane
         let interp = distance0 / (distance0 - distance1);
 
-        vOut[numOut] = new ClipVertex();
+        let clip: ClipVertex = new ClipVertex();
 
-        vOut[numOut].v = Vec2.add(vIn[0].v, Vec2.mulSV(interp , Vec2.sub(vIn[1].v, vIn[0].v)));
+        //  This single line creates 3 vec2s into a newly created vec2!
+        // clip.v = Vec2.add(vIn[0].v, Vec2.mulSV(interp, Vec2.sub(vIn[1].v, vIn[0].v)));
   
+        //  This saves 189 vec2 creations per frame:
+        clip.v.set(
+            vIn[0].v.x + (interp * (vIn[1].v.x - vIn[0].v.x)),
+            vIn[0].v.y + (interp * (vIn[1].v.y - vIn[0].v.y))
+        );
+
         if (distance0 > 0)
         {
-            vOut[numOut].fp = vIn[0].fp;
-            vOut[numOut].fp.e.inEdge1 = clipEdge;
-            vOut[numOut].fp.e.inEdge2 = EdgeNumbers.NO_EDGE;
+            clip.fp = vIn[0].fp;
+            clip.fp.e.inEdge1 = clipEdge;
+            clip.fp.e.inEdge2 = EdgeNumbers.NO_EDGE;
         }
         else
         {
-            vOut[numOut].fp = vIn[1].fp;
-            vOut[numOut].fp.e.outEdge1 = clipEdge;
-            vOut[numOut].fp.e.outEdge2 = EdgeNumbers.NO_EDGE;
+            clip.fp = vIn[1].fp;
+            clip.fp.e.outEdge1 = clipEdge;
+            clip.fp.e.outEdge2 = EdgeNumbers.NO_EDGE;
         }
+
+        vOut[numOut] = clip;
   
         numOut++;
     }

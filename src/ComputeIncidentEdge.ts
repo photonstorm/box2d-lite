@@ -80,8 +80,22 @@ export default function ComputeIncidentEdge (c: ClipVertex[], h: Vec2, pos: Vec2
         }
     }
 
-    clipVertex0.v = Vec2.add(pos, Mat22.mulMV(Rot, clipVertex0.v));
-    clipVertex1.v = Vec2.add(pos, Mat22.mulMV(Rot, clipVertex1.v));
+    // clipVertex0.v = Vec2.add(pos, Mat22.mulMV(Rot, clipVertex0.v));
+    // clipVertex1.v = Vec2.add(pos, Mat22.mulMV(Rot, clipVertex1.v));
+    
+    //  inline:
+    const v0 = clipVertex0.v;
+    const v1 = clipVertex1.v;
+
+    let mx = pos.x + (Rot.a * v0.x + Rot.b * v0.y);
+    let my = pos.y + (Rot.c * v0.x + Rot.d * v0.y);
+
+    v0.set(mx, my);
+
+    mx = pos.x + (Rot.a * v1.x + Rot.b * v1.y);
+    my = pos.y + (Rot.c * v1.x + Rot.d * v1.y);
+
+    v1.set(mx, my);
 
     c[0] = clipVertex0;
     c[1] = clipVertex1;
