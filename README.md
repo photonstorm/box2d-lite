@@ -26,10 +26,8 @@ Frame: 600 = 97,196 vec2s - 36,999 mat22s
 
 ## v0.0.4
 
-ComputeIncidentEdge RotT inline:
+ComputeIncidentEdge n / abs n inline:
 
-Frame: 200 = 64,224 vec2s - 36,877 mat22s
-Frame: 600 = 97,196 vec2s - 36,877 mat22s
-
-mat22s now solid per frame.
+Frame: 200 = 64,112 vec2s - 36,877 mat22s
+Frame: 600 = 96,952 vec2s - 36,877 mat22s
 
