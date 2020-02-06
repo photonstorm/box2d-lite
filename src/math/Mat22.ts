@@ -33,6 +33,8 @@ export default class Mat22
             this.col1 = aOvA;
             this.col2 = vB;
         }
+
+        window['mat22Total']++;
     }
 
     static add (mA: Mat22, mB: Mat22): Mat22
