@@ -79,11 +79,11 @@ function loop ()
 
         if (frame === 200)
         {
-            frame200Text.value = vec2Text.value;
+            frame200Text.value = vec2Text.value + ' / ' + mat22Text.value;
         }
         else if (frame === 600)
         {
-            frame600Text.value = vec2Text.value;
+            frame600Text.value = vec2Text.value + ' / ' + mat22Text.value;
         }
 
         frame++;

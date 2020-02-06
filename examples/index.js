@@ -527,8 +527,16 @@ class ClipVertex {
 function ComputeIncidentEdge(c, h, pos, Rot, normalX, normalY) {
     //  The normal is from the reference box
     //  Convert it to the incident box frame and flip sign
-    let RotT = Mat22.transpose(Rot);
-    let n = new Vec2(-(RotT.a * normalX + RotT.b * normalY), -(RotT.c * normalX + RotT.d * normalY));
+    // let RotT: Mat22 = Mat22.transpose(Rot);
+    let invA = Rot.a;
+    let invB = Rot.c;
+    let invC = Rot.b;
+    let invD = Rot.d;
+    // let n: Vec2 = new Vec2(
+    //     -(RotT.a * normalX + RotT.b * normalY),
+    //     -(RotT.c * normalX + RotT.d * normalY)
+    // );
+    let n = new Vec2(-(invA * normalX + invB * normalY), -(invC * normalX + invD * normalY));
     let nAbs = Vec2.abs(n);
     const clipVertex0 = new ClipVertex();
     const clipVertex1 = new ClipVertex();
@@ -1283,10 +1291,10 @@ function loop() {
         vec2Text.value = window['vec2Total'].toString();
         mat22Text.value = window['mat22Total'].toString();
         if (frame === 200) {
-            frame200Text.value = vec2Text.value;
+            frame200Text.value = vec2Text.value + ' / ' + mat22Text.value;
         }
         else if (frame === 600) {
-            frame600Text.value = vec2Text.value;
+            frame600Text.value = vec2Text.value + ' / ' + mat22Text.value;
         }
         frame++;
     }
