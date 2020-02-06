@@ -15,15 +15,15 @@ import Vec2 from './math/Vec2';
  * Ported to TypeScript by Richard Davey, 2020.
  */
 
-export default function ClipSegmentToLine (vOut: ClipVertex[], vIn: ClipVertex[], normal: Vec2, offset: number, clipEdge: EdgeNumbers): number
+export default function ClipSegmentToLine (vOut: ClipVertex[], vIn: ClipVertex[], normalX: number, normalY: number, offset: number, clipEdge: EdgeNumbers): number
 {
     //  Start with no output points
     let numOut = 0;
   
     // Calculate the distance of end points to the line
-    let distance0 = Vec2.dot(normal, vIn[0].v) - offset;
-    let distance1 = Vec2.dot(normal, vIn[1].v) - offset;
-  
+    let distance0 = Vec2.dotXYV(normalX, normalY, vIn[0].v) - offset;
+    let distance1 = Vec2.dotXYV(normalX, normalY, vIn[1].v) - offset;
+
     // If the points are behind the plane
     if (distance0 <= 0)
     {
