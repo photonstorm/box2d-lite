@@ -133,7 +133,7 @@ export default class CanvasRenderer
         ctx.lineWidth = 0.5;
 
         ctx.beginPath();
-        ctx.arc(contact.position.x, contact.position.y, 2, 0, 2 * Math.PI);
+        ctx.arc(contact.positionX, contact.positionY, 2, 0, 2 * Math.PI);
         ctx.stroke();
     }
 
