@@ -181,20 +181,31 @@ export default class Arbiter
 
             //  Relative velocity at contact
 
-            let cross1x = -body2.angularVelocity * r2.y;
-            let cross1y = body2.angularVelocity * r2.x;
+            // let cross1x = -body2.angularVelocity * r2.y;
+            // let cross1y = body2.angularVelocity * r2.x;
 
-            let cross2x = -body1.angularVelocity * r1.y;
-            let cross2y = body1.angularVelocity * r1.x;
+            // let cross2x = -body1.angularVelocity * r1.y;
+            // let cross2y = body1.angularVelocity * r1.x;
 
-            let addX = body2.velocity.x + cross1x;
-            let addY = body2.velocity.y + cross1y;
+            // let addX = body2.velocity.x + cross1x;
+            // let addY = body2.velocity.y + cross1y;
 
-            let subX = addX - body1.velocity.x;
-            let subY = addY - body1.velocity.y;
+            // let subX = addX - body1.velocity.x;
+            // let subY = addY - body1.velocity.y;
 
-            let dVx = subX - cross2x;
-            let dVy = subY - cross2y;
+            let subX = (body2.velocity.x + (-body2.angularVelocity * r2.y)) - body1.velocity.x;
+            let subY = (body2.velocity.y + (body2.angularVelocity * r2.x)) - body1.velocity.y;
+
+            // let subX = (body2.velocity.x + cross1x) - body1.velocity.x;
+            // let subY = (body2.velocity.y + cross1y) - body1.velocity.y;
+
+            let dVx = subX - (-body1.angularVelocity * r1.y);
+            let dVy = subY - (body1.angularVelocity * r1.x);
+            
+            // let dVx = subX - cross2x;
+            // let dVy = subY - cross2y;
+
+            // let dVx = (body2.velocity.x + -body2.angularVelocity * r2.y)
 
             //  Compute normal impulse
 
