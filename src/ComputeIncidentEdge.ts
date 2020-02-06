@@ -21,11 +21,21 @@ export default function ComputeIncidentEdge (c: ClipVertex[], h: Vec2, pos: Vec2
     //  The normal is from the reference box
     //  Convert it to the incident box frame and flip sign
 
-    let RotT: Mat22 = Mat22.transpose(Rot);
+    // let RotT: Mat22 = Mat22.transpose(Rot);
+
+    let invA = Rot.a;
+    let invB = Rot.c;
+    let invC = Rot.b;
+    let invD = Rot.d;
+
+    // let n: Vec2 = new Vec2(
+    //     -(RotT.a * normalX + RotT.b * normalY),
+    //     -(RotT.c * normalX + RotT.d * normalY)
+    // );
 
     let n: Vec2 = new Vec2(
-        -(RotT.a * normalX + RotT.b * normalY),
-        -(RotT.c * normalX + RotT.d * normalY)
+        -(invA * normalX + invB * normalY),
+        -(invC * normalX + invD * normalY)
     );
 
     let nAbs: Vec2 = Vec2.abs(n);
