@@ -24,11 +24,11 @@ export default {
             extensions,
             comments: false,
             presets: [
-                [ "@babel/preset-env", {
-                    targets: {
-                        esmodules: true
-                    }
-                }],
+                // [ "@babel/preset-env", {
+                //     targets: {
+                //         esmodules: true
+                //     }
+                // }],
                 // [ "minify", {
                 //     builtIns: false,
                 //     removeConsole: false,
@@ -36,8 +36,8 @@ export default {
                 "@babel/preset-typescript"
             ],
             plugins: [
-                "@babel/proposal-class-properties",
-                "@babel/proposal-object-rest-spread"
+                // "@babel/proposal-class-properties",
+                // "@babel/proposal-object-rest-spread"
             ]
         })
 

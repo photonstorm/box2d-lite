@@ -1,18 +1,5 @@
 {
     "compilerOptions": {
-    //   "moduleResolution": "node",
-    //   "target": "esnext",
-    //   "module": "es2015",
-    //   "lib": [ "dom", "es5", "es6", "es7", "esnext" ],
-    //   "esModuleInterop": true,
-    //   "outDir": "./dist",
-    //   "declaration": true,
-    //   "declarationDir": "./dist",
-    //   "declarationMap": true,
-    //   "sourceMap": true
-    },
-    "files": [
-    //   "src/index.ts"
-    ],
-    "exclude": [ "node_modules" ]
+      "target": "esnext"
+    }
 }
