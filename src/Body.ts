@@ -1,3 +1,4 @@
+import AABB from './math/AABB';
 import Vec2 from './math/Vec2';
 
 /**
@@ -37,8 +38,12 @@ export default class Body
 
     id: number = 0;
 
+    bounds: AABB;
+
     constructor (width: number, height: number, mass: number)
     {
+        this.bounds = new AABB(this);
+
         this.set(width, height, mass);
     }
 
@@ -60,6 +65,8 @@ export default class Body
             this.I = Number.MAX_VALUE;
             this.invI = 0;
         }
+
+        this.bounds.update();
 
         return this;
     }
@@ -97,6 +104,7 @@ export default class Body
 
         this.force.set(0, 0);
         this.torque = 0;
-    }
 
+        this.bounds.update();
+    }
 }
