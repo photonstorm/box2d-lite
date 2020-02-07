@@ -217,14 +217,6 @@ export default function Collide (contacts: Contact[], bodyA: Body, bodyB: Body):
 {
     // Setup
 
-    // static mulSV (s: number, v: Vec2): Vec2
-    // {
-    //     return new Vec2(s * v.x, s * v.y);
-    // }
-
-    // let hA = Vec2.mulSV(0.5, bodyA.width); // half the width of bodyA
-    // let hB = Vec2.mulSV(0.5, bodyB.width); // half the width of bodyB
-
     //  half the width of bodyA
     hA.set(
         0.5 * bodyA.width.x,
@@ -240,63 +232,34 @@ export default function Collide (contacts: Contact[], bodyA: Body, bodyB: Body):
     let posA = bodyA.position;
     let posB = bodyB.position;
 
-    // let RotA = new Mat22().set(bodyA.rotation);
-    // let RotB = new Mat22().set(bodyB.rotation);
-
     RotA.set(bodyA.rotation);
     RotB.set(bodyB.rotation);
 
     RotAT.transpose(bodyA.rotation);
     RotBT.transpose(bodyB.rotation);
 
-    // let RotAT = Mat22.transpose(RotA);
-    // let RotBT = Mat22.transpose(RotB);
-
-    // let dp: Vec2 = Vec2.sub(posB, posA);
-
     dp.set(
         posB.x - posA.x,
         posB.y - posA.y
     );
-
-    // static mulMV (m: Mat22, v: Vec2): Vec2
-    // {
-    //     return new Vec2(
-    //         m.a * v.x + m.b * v.y,
-    //         m.c * v.x + m.d * v.y
-    //     );
-    // }
-
-    // let dA: Vec2 = Mat22.mulMV(RotAT, dp);
 
     dA.set(
         RotAT.a * dp.x + RotAT.b * dp.y,
         RotAT.c * dp.x + RotAT.d * dp.y
     );
 
-    // let dB: Vec2 = Mat22.mulMV(RotBT, dp);
-
     dB.set(
         RotBT.a * dp.x + RotBT.b * dp.y,
         RotBT.c * dp.x + RotBT.d * dp.y
     );
 
-    // let C = Mat22.mulMM(RotAT, RotB);
-
     C.mulMM(RotAT, RotB);
 
-    // let absC = Mat22.abs(C);
-
     Mat22.absM(C, absC);
-
-    // let absCT = Mat22.transpose(absC);
 
     Mat22.transposeM(absC, absCT);
 
     // Box A faces
-
-    //                        faceA1                      faceA2
-    // let faceA = Vec2.sub(  Vec2.sub(Vec2.abs(dA), hA), Mat22.mulMV(absC, hB)  );
 
     faceA1.set(
         Math.abs(dA.x) - hA.x,
@@ -317,11 +280,6 @@ export default function Collide (contacts: Contact[], bodyA: Body, bodyB: Body):
     }
 
     // Box B faces
-
-    // let faceB = Vec2.sub(
-    //                      faceB1                 faceB2
-    //                      Vec2.sub(Vec2.abs(dB), Mat22.mulMV(absCT, hA)),
-    //                      hB);
 
     //  store result in faceB2
     Mat22.mulMVV(absCT, hA, faceB2);
@@ -347,8 +305,6 @@ export default function Collide (contacts: Contact[], bodyA: Body, bodyB: Body):
 
     let axis: Axis = Axis.FACE_A_X;
     let separation: number = faceA.x;
-
-    // let normal: Vec2 = (dA.x > 0) ? RotA.col1 : Vec2.neg(RotA.col1);
 
     let normalX: number = 0;
     let normalY: number = 0;
@@ -475,21 +431,6 @@ export default function Collide (contacts: Contact[], bodyA: Body, bodyB: Body):
                 clipPoints[i].y - (separation * frontNormalY),
                 clipPoints[i].fp
             );
-
-            // contacts[numContacts].separation = separation;
-            // contacts[numContacts].normal.set(normalX, normalY);
-
-            // contacts[numContacts].position = new Vec2(
-            //     clipPoints[i].v.x - (separation * frontNormalX),
-            //     clipPoints[i].v.y - (separation * frontNormalY)
-            // );
-
-            // contacts[numContacts].position.set(
-            //     clipPoints[i].v.x - (separation * frontNormalX),
-            //     clipPoints[i].v.y - (separation * frontNormalY)
-            // );
-
-            // contacts[numContacts].feature = clipPoints[i].fp;
 
             if (axis === Axis.FACE_B_X || axis === Axis.FACE_B_Y)
             {

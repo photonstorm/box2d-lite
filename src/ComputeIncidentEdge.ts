@@ -21,29 +21,15 @@ export default function ComputeIncidentEdge (c: ClipVertex[], h: Vec2, pos: Vec2
     //  The normal is from the reference box
     //  Convert it to the incident box frame and flip sign
 
-    // let RotT: Mat22 = Mat22.transpose(Rot);
-
     let invA = Rot.a;
     let invB = Rot.c;
     let invC = Rot.b;
     let invD = Rot.d;
 
-    // let n: Vec2 = new Vec2(
-    //     -(RotT.a * normalX + RotT.b * normalY),
-    //     -(RotT.c * normalX + RotT.d * normalY)
-    // );
-
-    // let n: Vec2 = new Vec2(
-    //     -(invA * normalX + invB * normalY),
-    //     -(invC * normalX + invD * normalY)
-    // );
-
     const nX: number = -(invA * normalX + invB * normalY);
     const nY: number = -(invC * normalX + invD * normalY);
     const absX: number = Math.abs(nX);
     const absY: number = Math.abs(nY);
-
-    // let nAbs: Vec2 = Vec2.abs(n);
 
     const clipVertex0: ClipVertex = new ClipVertex(0, 0);
     const clipVertex1: ClipVertex = new ClipVertex(0, 0);
@@ -94,13 +80,6 @@ export default function ComputeIncidentEdge (c: ClipVertex[], h: Vec2, pos: Vec2
             clipVertex1.fp.e.outEdge2 = EdgeNumbers.EDGE4;
         }
     }
-
-    // clipVertex0.v = Vec2.add(pos, Mat22.mulMV(Rot, clipVertex0.v));
-    // clipVertex1.v = Vec2.add(pos, Mat22.mulMV(Rot, clipVertex1.v));
-    
-    //  inline:
-    // const v0 = clipVertex0.v;
-    // const v1 = clipVertex1.v;
 
     let mx = pos.x + (Rot.a * clipVertex0.x + Rot.b * clipVertex0.y);
     let my = pos.y + (Rot.c * clipVertex0.x + Rot.d * clipVertex0.y);
