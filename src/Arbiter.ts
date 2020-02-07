@@ -104,8 +104,7 @@ export default class Arbiter
 
     preStep (inverseDelta: number)
     {
-        //  slop
-        const allowedPenetration = 0.01;
+        const allowedPenetration = this.world.allowedPenetration;
 
         let contacts: Contact[] = this.contacts;
         let numContacts: number = this.numContacts;
@@ -159,12 +158,18 @@ export default class Arbiter
                 body1.velocity.x -= (body1.invMass * pX);
                 body1.velocity.y -= (body1.invMass * pY);
 
-                body1.angularVelocity -= body1.invI * (r1X * pY - r1Y * pX);
+                if (!body1.fixedRotation)
+                {
+                    body1.angularVelocity -= body1.invI * (r1X * pY - r1Y * pX);
+                }
 
                 body2.velocity.x += (body2.invMass * pX);
                 body2.velocity.y += (body2.invMass * pY);
 
-                body2.angularVelocity += body2.invI * (r2X * pY - r2Y * pX);
+                if (!body2.fixedRotation)
+                {
+                    body2.angularVelocity += body2.invI * (r2X * pY - r2Y * pX);
+                }
             }
         }
     }
@@ -218,11 +223,19 @@ export default class Arbiter
 
             body1.velocity.x -= (body1.invMass * PnX);
             body1.velocity.y -= (body1.invMass * PnY);
-            body1.angularVelocity -= body1.invI * Vec2.crossXY(c.r1X, c.r1Y, PnX, PnY);
+
+            if (!body1.fixedRotation)
+            {
+                body1.angularVelocity -= body1.invI * Vec2.crossXY(c.r1X, c.r1Y, PnX, PnY);
+            }
 
             body2.velocity.x += (body2.invMass * PnX);
             body2.velocity.y += (body2.invMass * PnY);
-            body2.angularVelocity += body2.invI * Vec2.crossXY(c.r2X, c.r2Y, PnX, PnY);
+
+            if (!body2.fixedRotation)
+            {
+                body2.angularVelocity += body2.invI * Vec2.crossXY(c.r2X, c.r2Y, PnX, PnY);
+            }
 
             //  Relative velocity at contact
 
@@ -256,11 +269,19 @@ export default class Arbiter
 
             body1.velocity.x -= (body1.invMass * PnX);
             body1.velocity.y -= (body1.invMass * PnY);
-            body1.angularVelocity -= body1.invI * Vec2.crossXY(c.r1X, c.r1Y, PnX, PnY);
+
+            if (!body1.fixedRotation)
+            {
+                body1.angularVelocity -= body1.invI * Vec2.crossXY(c.r1X, c.r1Y, PnX, PnY);
+            }
 
             body2.velocity.x += (body2.invMass * PnX);
             body2.velocity.y += (body2.invMass * PnY);
-            body2.angularVelocity += body2.invI * Vec2.crossXY(c.r2X, c.r2X, PnX, PnY);
+
+            if (!body2.fixedRotation)
+            {
+                body2.angularVelocity += body2.invI * Vec2.crossXY(c.r2X, c.r2X, PnX, PnY);
+            }
         }
     }
 }

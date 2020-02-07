@@ -29,6 +29,7 @@ export default class World
     accumulateImpulses: boolean = true;
     warmStarting: boolean = true;
     positionCorrection: number = 0.2;
+    allowedPenetration: number = 0.01; // slop
 
     constructor (gravity: Vec2 = new Vec2(0, 9.807), iterations: number = 10)
     {
