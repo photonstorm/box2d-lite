@@ -6,45 +6,58 @@ import Vec2 from '../src/math/Vec2';
 
 let delta = 1 / 30;
 let world = new World(new Vec2(0, 40), 10);
+// let world = new World();
 
-let floor = new Body(new Vec2(2000, 80), Number.MAX_VALUE);
+let floor = new Body(new Vec2(800, 64), Number.MAX_VALUE);
 
-floor.position.set(500, 500);
+floor.position.set(400, 600-32);
+floor.friction = 0;
 
 world.addBody(floor);
 
-let box;
-let boxPos = new Vec2(300, -150);
-let boxesPerRow = 10;
-let boxesPerCol = 10;
-let boxOffset = 16;
+let leftWall = new Body(new Vec2(64, 600), Number.MAX_VALUE);
 
-for (let i = 0; i < boxesPerRow; i++)
+leftWall.position.set(-32, 300);
+leftWall.friction = 0;
+
+world.addBody(leftWall);
+
+let rightWall = new Body(new Vec2(64, 600), Number.MAX_VALUE);
+
+rightWall.position.set(832, 300);
+rightWall.friction = 0;
+
+world.addBody(rightWall);
+
+for (let i = 0; i < 16; i++)
 {
-    for (let j = 0; j < boxesPerCol; j++)
-    {
-        box = new Body(new Vec2(12, 12), 5);
-        box.position.set(boxPos.x + i * boxOffset, boxPos.y + j * boxOffset);
-        box.velocity.y = -50 + j;
-        world.addBody(box);
-    }
+    let box = new Body(new Vec2(32, 32), 1);
+
+    box.position.set(400, 520 - (i * 40));
+    // box.friction = 0;
+    box.fixedRotation = true;
+    
+    world.addBody(box);
 }
 
-let support = new Body(new Vec2(25, 25), Number.MAX_VALUE);
-support.position.set(350+180, 50);
-world.addBody(support);
+//  Stack of boxes
 
-let pendulum = new Body(new Vec2(50, 50), 900);
-pendulum.position.set(505+180, 40);
-world.addBody(pendulum);
+/*
+for (let i = 0; i < 16; i++)
+{
+    let box = new Body(new Vec2(32, 32), 1);
 
-let joint = new Joint();
-joint.set(world, support, pendulum, support.position);
-world.addJoint(joint);
+    box.position.set(400, 520 - (i * 32));
+    box.friction = 0;
+    box.fixedRotation = true;
+    
+    world.addBody(box);
+}
+*/
 
 let renderer = new CanvasRenderer(document.getElementById('demo') as HTMLCanvasElement);
 
-let pause = true;
+let pause = false;
 let frame = 0;
 
 let frameText = document.getElementById('frame') as HTMLFormElement;
