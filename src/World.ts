@@ -135,20 +135,7 @@ export default class World
 
         for (let i: number = 0; i < bodies.length; i++)
         {
-            let body = bodies[i];
-
-            if (body.invMass === 0)
-            {
-                continue;
-            }
-
-            body.velocity.x += delta * (gravity.x + (body.invMass * body.force.x));
-            body.velocity.y += delta * (gravity.y + (body.invMass * body.force.y));
-
-            if (!body.fixedRotation)
-            {
-                body.angularVelocity += delta * body.invI * body.torque;
-            }
+            bodies[i].preStep(delta, gravity);
         }
 
         //  Pre-steps
@@ -187,18 +174,7 @@ export default class World
 
         for (let i: number = 0; i < bodies.length; i++)
         {
-            let body = bodies[i];
-
-            body.position.x += delta * body.velocity.x;
-            body.position.y += delta * body.velocity.y;
-
-            if (!body.fixedRotation)
-            {
-                body.rotation += delta * body.angularVelocity;
-            }
-
-            body.force.set(0, 0);
-            body.torque = 0;
+            bodies[i].postStep(delta);
         }
     }
 }

@@ -68,4 +68,33 @@ export default class Body
 
         return this;
     }
+
+    preStep (delta: number, gravity: Vec2)
+    {
+        if (this.invMass !== 0)
+        {
+            this.velocity.x += delta * (gravity.x + (this.invMass * this.force.x));
+            this.velocity.y += delta * (gravity.y + (this.invMass * this.force.y));
+    
+            if (!this.fixedRotation)
+            {
+                this.angularVelocity += delta * this.invI * this.torque;
+            }
+        }
+    }
+
+    postStep (delta: number)
+    {
+        this.position.x += delta * this.velocity.x;
+        this.position.y += delta * this.velocity.y;
+
+        if (!this.fixedRotation)
+        {
+            this.rotation += delta * this.angularVelocity;
+        }
+
+        this.force.set(0, 0);
+        this.torque = 0;
+    }
+
 }
