@@ -36,9 +36,7 @@ Frame: 200 = 64,448 vec2s - 36,933 mat22s
 Frame: 600 = 97,684 vec2s - 36,999 mat22s
 ```
 
-Test case now down from 270k vec2 per frame to around 97k.
-
-mat22s fluctate per frame
+Much better! That's a 66.2304% decrease on Frame 200 in vec2s. The mat22s still fluctate per frame, though. The more contacts, the more there are, so clearly we need to look at the Collision function soon.
 
 ## v0.0.3
 
@@ -49,6 +47,8 @@ Frame: 200 = 64,224 vec2s - 36,933 mat22s
 Frame: 600 = 97,196 vec2s - 36,999 mat22s
 ```
 
+Barely any change, just a 0.347567% decrease.
+
 ## v0.0.4
 
 ComputeIncidentEdge n / abs n inline:
@@ -57,6 +57,8 @@ ComputeIncidentEdge n / abs n inline:
 Frame: 200 = 64,112 vec2s - 36,877 mat22s
 Frame: 600 = 96,952 vec2s - 36,877 mat22s
 ```
+
+Another really minor gain at a 0.17439% decrease.
 
 ## v0.0.5
 
@@ -67,11 +69,13 @@ Frame: 200 = 62,460 vec2s - 36,772 mat22s
 Frame: 600 = 95,300 vec2s - 36,772 mat22s
 ```
 
+Getting there. The renderer really shouldn't add anything! And now it doesn't. A 2.57674% decrease.
+
 ## v0.0.6
 
-Let's break-down which part of the World.step is causing the most creations:
+Let's break-down which part of the `World.step` is causing the most creations:
 
-vec2s:
+**vec2s**
 
 Frame 200: 
 
@@ -91,7 +95,7 @@ Frame 600:
 5) 95,197 - Perform aribter and joint iterations
 6) 95,300 - Integrate velocities
 
-mat22s:
+**mat22s:**
 
 Frame 200 and 600 are the same:
 
@@ -102,24 +106,24 @@ Frame 200 and 600 are the same:
 5) 36,772 - Perform aribter and joint iterations
 6) 36,772 - Integrate velocities
 
-So, for vec2s the majority happen in World.broadphase and then a massive jump when performing arbiter and joint iterations.
+So, for vec2s the majority happen in `World.broadphase` and then a massive jump when performing arbiter and joint iterations.
 
-For mat22s everything pretty much happens in World.broadphase.
+For mat22s everything pretty much happens in `World.broadphase`.
 
 Let's try and reduce the number of vec2s created during arbiter iterations by inlining a bunch of that math.
 
 ## v0.0.7
 
-Inlined all vector math in Arbiter.applyImpulse and found some duplicate code:
+Inlined all vector math in `Arbiter.applyImpulse` and found some duplicate code:
 
 ```
 Frame: 200 = 50,210 vec2s - 36,772 mat22s
 Frame: 600 = 53,998 vec2s - 36,772 mat22s
 ```
 
-This is a 19.6126% decrease on Frame 200 and a massive 43.3389% decrease on Frame 600.
+This is a 19.6126% decrease on Frame 200 and a massive 43.3389% decrease on Frame 600. Lovely.
 
-Let's check this against our World.step flow:
+Let's check our `World.step` stats again:
 
 Frame 200:
 
@@ -145,7 +149,7 @@ At this stage, it doesn't matter if the bodies are in contact or not, we're gett
 
 When the test starts-up there are 533 vec2 instances and 7 mat22 instances, this is before the World has even stepped once, so it's just what the bodies, joints, etc need to exist.
 
-World.broadphase is clearly the biggest cost here because of the Collide function.
+`World.broadphase` is clearly the biggest cost here because of the Collide function.
 
 It creates 4 new vec2s _per_ Contact instance. Let's see if we can get that lower.
 
@@ -169,11 +173,11 @@ Frame: 600 = 866 vec2s - 8 mat22s
 
 This is a 98.582% decrease on Frame 200 and 98.2205% decrease on Frame 600 for vec2s, and a huge 99.9782% decrease for the mat22s :)
 
-Pretty happy with just 8 mat22s in the entire test! We're still creating ~700 vec2s per frame, though. That is well within an acceptable range, but it'd be good to see if we can push this any further.
+Pretty happy with just 8 mat22s in the entire test! We're still creating ~700 vec2s per frame, though. That is well within an acceptable range, but it'd be good to see if we can push this any further down.
 
 ## v0.1.0
 
-It would appear that the final instance creating bastion is the ClipVertex. It only creates one vec2 instance per class, but we can still do away with it perfectly easily, with minimal changes elsewhere. Let's go...
+It would appear that the final bastion is the `ClipVertex` class. It only creates one vec2 instance per class, but we can still do away with it perfectly easily, with minimal changes elsewhere. Let's go...
 
 ```
 Frame: 200 = 535 vec2s - 8 mat22s
@@ -186,7 +190,7 @@ Also, a 38.2217% decrease is pretty good. But, I'm sure we can go further withou
 
 ## v0.2.0
 
-Let's check to see where these instances are coming from in the World.step:
+Let's check to see where these instances are coming from in the `World.step` again:
 
 1) 0 - World.broadphase
 2) 303 - Integrate forces
@@ -224,9 +228,9 @@ Frame: 200 = 129 vec2s - 8 mat22s
 Frame: 600 = 129 vec2s - 8 mat22s
 ```
 
-A healthy 75.8879% decrease.
+A healthy 75.8879% decrease over the previous version.
 
-The final part has to be looking at the joints, as these are the only thing causing vec2 creation now. Onwards ...
+The final part has to be looking at the joints, as these are the only thing causing creation now. Onwards ...
 
 ## v0.3.0
 
@@ -237,7 +241,7 @@ Frame: 200 = 0 vec2s - 0 mat22s
 Frame: 600 = 0 vec2s - 0 mat22s
 ```
 
-Yup! Not one single new vec2 or mat22 instance is being created during a World.step now. A bit of an improvement from the 270,000 we had at the start of the day :) All math has been either inlined or moved to cached instances.
+Yup! Not one single new vec2 or mat22 instance is being created during a `World.step` now. A bit of an improvement from the 274,009 we had at the start of the day :) All math has been either inlined or moved to cached instances. Performance speaks for itself, too.
 
 The test case creates a total of 529 vec2s and 3 mat22s when the simulation starts-up (after creating 103 bodies and a joint). Each body has 4 vec2s, which accounts for 412 of them. Joints have 6 and the rest are created by the classes as cache vars.
 
