@@ -71,6 +71,16 @@ export default class AABB
         }
     }
 
+    intersects (bounds: AABB): boolean
+    {
+        return !(
+            bounds.x1 > this.x2 ||
+            bounds.x2 < this.x1 ||
+            bounds.y1 > this.y2 ||
+            bounds.y2 < this.y1
+        );
+    }
+
     destroy ()
     {
         this.body = null;
