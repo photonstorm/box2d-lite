@@ -37,6 +37,8 @@ As you can see, we're already over our frame budget at 18.8ms (53fps) and the he
 
 ![image](pages/callstackv000.png)
 
+We've a lot of work to be done tidying this up.
+
 ## v0.0.2
 
 Inlined all of the Mat22 static functions.
@@ -85,36 +87,14 @@ Getting there. The renderer really shouldn't add anything! And now it doesn't. A
 
 Let's break-down which part of the `World.step` is causing the most creations:
 
-**vec2s**
-
-Frame 200: 
-
-1) 48,065 - World.broadphase
-2) 48,368 - Integrate forces
-3) 48,928 - Arbiters preStep
-4) 48,937 - Joints preStep
-5) 62,357 - Perform aribter and joint iterations
-6) 62,460 - Integrate velocities
-
-Frame 600:
-
-1) 49,225 - World.broadphase
-2) 49,528 - Integrate forces
-3) 51,368 - Arbiters preStep
-4) 51,377 - Joints preStep
-5) 95,197 - Perform aribter and joint iterations
-6) 95,300 - Integrate velocities
-
-**mat22s:**
-
-Frame 200 and 600 are the same:
-
-1) 36,764 - World.broadphase
-2) 36,764 - Integrate forces
-3) 36,764 - Arbiters preStep
-4) 36,772 - Joints preStep
-5) 36,772 - Perform aribter and joint iterations
-6) 36,772 - Integrate velocities
+| Step                                 | vec2 frame 200 | vec 2 frame 600 | mat22 frame 200 &amp; 600 |
+|--------------------------------------|----------------|-----------------|---------------------------|
+| World.broadphase                     | 48,065         | 49,225          | 36,764                    |
+| Integrate forces                     | 48,368         | 49,528          | 36,764                    |
+| Arbiters preStep                     | 48,928         | 51,368          | 36,764                    |
+| Joints preStep                       | 48,937         | 51,377          | 36,772                    |
+| Perform aribter and joint iterations | 62,357         | 95,197          | 36,772                    |
+| Integrate velocities                 | 62,460         | 95,300          | 36,772                    |
 
 So, for vec2s the majority happen in `World.broadphase` and then a massive jump when performing arbiter and joint iterations.
 
