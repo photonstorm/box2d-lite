@@ -270,10 +270,14 @@ With our volume of bodies, the performance issue right now isn't that the test i
 
 In the new test there are 3 wall bodies (left, right and bottom) and then I spawn in a whole bunch of bodies from the top, letting gravity pull them down.
 
-With 10 bodies we're creating 75 arbiters per frame.
-With 100 bodies it's 5250.
-With 200 bodies it's 20,500.
-With 500 bodies it's 126,250 (and the test runs at something like 1 frame every 3 seconds!)
+| Total Bodies | Arbiters per frame  |
+|--------------|---------------------|
+| 10           | 75                  |
+| 100          | 5,250               |
+| 200          | 20,500              |
+| 500          | 126,250             |
+
+With 500 the test runs at something like 1 frame every 3 seconds!
 
 So, definitely won't scale. We need to eliminate pointless Arbiter creation.
 
@@ -295,16 +299,30 @@ The CanvasRenderer can now render a Body bounds, too, with optional flag:
 
 Added `AABB.intersects` method, so you can pass another AABB and get a boolean back again. Let's add this to the current (slow) broadphase. The results are much better, now:
 
-With 10 bodies we're creating around 30 arbiters per frame.
-With 100 bodies it's around 320.
-With 200 bodies it's around 700.
-With 500 bodies it's around 1700.
+| Total Bodies | Arbiters per frame  |
+|--------------|---------------------|
+| 10           | ~30                 |
+| 100          | ~320                |
+| 200          | ~700                |
+| 500          | ~1700               |
 
-I say "around" because it now only creates a new Arbiter if two bodies intersect, and as they're being spawned randomly, they don't always intersect at the same point. I could use a fixed position test to get exact stats back, but there's really no need - we've achieved the goal for this stage - and that's a whopping 98.6535% decrease in a test with 500 bodies. Taking us back up to a solid 60fps again.
+The values are approximate because it now only creates a new Arbiter if two bodies intersect, and as they're being spawned randomly, they don't always intersect at the same point. I could use a fixed position test to get exact stats back, but there's really no need - we've achieved the goal for this stage - and that's a whopping 98.6535% decrease in a test with 500 bodies. Taking us back up to a solid 60fps again.
 
-However, it's not all glory :) Bumping up to 1000 bodies makes the frame rate plummet again, as it's creating upwards of 4000 Arbiters per frame again.
+However, it's not all glory :) Bumping up to 1000 bodies makes the frame rate plummet again, as it's creating upwards of 4000 Arbiters per frame ~sigh~ .
 
-So, the naive broadphase is a massive improvement, yet it's not enough if we want to scale this further. Time to break out a grid.
+So, the naive broadphase is a big improvement, yet it's not enough if we want to scale this further. Time to break out a grid.
 
 ## v0.8.0
+
+Now that the AABBs are in and working we could use them in a couple of ways.
+
+Before that, this test is still working on the basis that every Body in the World can collide with every other Body. This isn't realistic for most games. You typically set-up collision masks, so you're only checking bodies of a certain group against others, thus avoid lots of pointless tests. This is quite easy to implement, but it's independant of a sorting or grid system and would work in conjunction with it, so I'll explore the grid first.
+
+The first, is that we could sort the list of Bodies based on the position of their bounds, so they're all sorted in the same direction, i.e. from top to bottom, or left to right. A body with a bounds of `x1: 200` would appear earlier in the array than one with a bounds of `x1: 600`, and so on.
+
+When checking a body against all other bodies, we can automatically eliminate any body that came before it in the array. As we then iterate the remainder, as soon as we've exceeded the width (or height) of the bounds being checked, we can break out of the iteration completely.
+
+It works well but it has two down-sides: First, you need to sort the bodies array per test, and second, it can only be sorted in a single direction. This is fine for lots of games, i.e. think of a horizontally scrolling shoot-em-up. You can safely ignore all bodies that have gone past the player (before recycling them, of course). I used this method in Phaser 2 and it works nicely when configured, but it probably won't do here.
+
+The alternative is a QuadTree, or similar data structure such as an R-Tree.
 
