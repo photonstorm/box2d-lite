@@ -11,6 +11,7 @@ export default class CanvasRenderer
     context: CanvasRenderingContext2D;
 
     showBodies: boolean = true;
+    showBounds: boolean = true;
     showContacts: boolean = true;
     showJoints: boolean = true;
 
@@ -56,6 +57,14 @@ export default class CanvasRenderer
             }
         }
         
+        if (this.showBounds)
+        {
+            for (let i = 0; i < bodies.length; i++)
+            {
+                this.renderBodyBounds(bodies[i], context);
+            }
+        }
+
         if (this.showContacts)
         {
             for (let i = 0; i < arbiters.length; i++)
@@ -76,6 +85,16 @@ export default class CanvasRenderer
                 this.renderJoint(joints[i], context);
             }
         }
+    }
+
+    renderBodyBounds (body: Body, ctx: CanvasRenderingContext2D)
+    {
+        ctx.strokeStyle = 'grey';
+        ctx.lineWidth = 0.5;
+
+        ctx.beginPath();
+        ctx.rect(body.bounds.x1, body.bounds.y1, body.bounds.width, body.bounds.height);
+        ctx.stroke();
     }
 
     renderBody (body: Body, ctx: CanvasRenderingContext2D)
