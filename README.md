@@ -293,3 +293,18 @@ The CanvasRenderer can now render a Body bounds, too, with optional flag:
 
 ## v0.7.0
 
+Added `AABB.intersects` method, so you can pass another AABB and get a boolean back again. Let's add this to the current (slow) broadphase. The results are much better, now:
+
+With 10 bodies we're creating around 30 arbiters per frame.
+With 100 bodies it's around 320.
+With 200 bodies it's around 700.
+With 500 bodies it's around 1700.
+
+I say "around" because it now only creates a new Arbiter if two bodies intersect, and as they're being spawned randomly, they don't always intersect at the same point. I could use a fixed position test to get exact stats back, but there's really no need - we've achieved the goal for this stage - and that's a whopping 98.6535% decrease in a test with 500 bodies. Taking us back up to a solid 60fps again.
+
+However, it's not all glory :) Bumping up to 1000 bodies makes the frame rate plummet again, as it's creating upwards of 4000 Arbiters per frame again.
+
+So, the naive broadphase is a massive improvement, yet it's not enough if we want to scale this further. Time to break out a grid.
+
+## v0.8.0
+
