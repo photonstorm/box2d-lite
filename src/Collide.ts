@@ -219,14 +219,14 @@ export default function Collide (contacts: Contact[], bodyA: Body, bodyB: Body):
 
     //  half the width of bodyA
     hA.set(
-        0.5 * bodyA.width.x,
-        0.5 * bodyA.width.y
+        0.5 * bodyA.width,
+        0.5 * bodyA.height
     );
 
     //  half the width of bodyB
     hB.set(
-        0.5 * bodyB.width.x,
-        0.5 * bodyB.width.y
+        0.5 * bodyB.width,
+        0.5 * bodyB.height
     );
 
     let posA = bodyA.position;

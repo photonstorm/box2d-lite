@@ -84,8 +84,8 @@ export default class CanvasRenderer
 
         let position: Vec2 = body.position;
 
-        let hX = 0.5 * body.width.x;
-        let hY = 0.5 * body.width.y;
+        let hX = 0.5 * body.width;
+        let hY = 0.5 * body.height;
 
         const v1 = this._v1;
         const v2 = this._v2;

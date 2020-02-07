@@ -24,7 +24,8 @@ export default class Body
     force: Vec2 = new Vec2();
     torque: number = 0;
 
-    width: Vec2 = new Vec2();
+    width: number;
+    height: number;
 
     friction: number = 0.2;
     mass: number = Number.MAX_VALUE;
@@ -36,20 +37,21 @@ export default class Body
 
     id: number = 0;
 
-    constructor (width: Vec2, mass: number)
+    constructor (width: number, height: number, mass: number)
     {
-        this.set(width, mass);
+        this.set(width, height, mass);
     }
 
-    set (width: Vec2, mass: number): Body
+    set (width: number, height: number, mass: number): Body
     {
         this.width = width;
+        this.height = height;
         this.mass = mass;
 
         if (mass < Number.MAX_VALUE)
         {
             this.invMass = 1 / mass;
-            this.I = mass * (width.x * width.x + width.y * width.y) / 12;
+            this.I = mass * (width * width + height * height) / 12;
             this.invI = 1 / this.I;
         }
         else
