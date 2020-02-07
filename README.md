@@ -164,3 +164,47 @@ We've now got the vec2 instance count perfectly stable, regardless of the number
 
 Also, a 38.2217% decrease is pretty good. But, I'm sure we can go further without mangling the code too much.
 
+## v0.2.0
+
+Let's check to see where these instances are coming from in the World.step:
+
+1) 0 - World.broadphase
+2) 303 - Integrate forces
+3) 303 - Arbiters preStep
+4) 312 - Joints preStep
+5) 432 - Perform aribter and joint iterations
+6) 535 - Integrate velocities
+
+Both Frame 200 and 600 are identical now.
+
+Clearly, the biggest jump is from the integration of the forces. We also get another jump from joints. I've not touched the Joints class yet, so this isn't surprising. Let's inline the forces first, we could probably use a few cache vars in the World class to achieve this.
+
+After inling the force integration on the bodies:
+
+1) 0 - World.broadphase
+2) 0 - Integrate forces
+3) 0 - Arbiters preStep
+4) 9 - Joints preStep
+5) 129 - Perform aribter and joint iterations
+6) 232 - Integrate velocities
+
+Perfect, let's do the same for the velocity integration:
+
+1) 0 - World.broadphase
+2) 0 - Integrate forces
+3) 0 - Arbiters preStep
+4) 9 - Joints preStep
+5) 129 - Perform aribter and joint iterations
+6) 129 - Integrate velocities
+
+There, we've eliminated the instance creation between part 5 and 6 of the world step. At the end of this version we're now at:
+
+Frame: 200 = 129 vec2s - 8 mat22s
+Frame: 600 = 129 vec2s - 8 mat22s
+
+A healthy 75.8879% decrease.
+
+The final part has to be looking at the joints, as these are the only thing causing vec2 creation now. Onwards ...
+
+## v0.3.0
+

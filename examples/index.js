@@ -542,24 +542,14 @@ class ClipVertex {
 function ComputeIncidentEdge(c, h, pos, Rot, normalX, normalY) {
     //  The normal is from the reference box
     //  Convert it to the incident box frame and flip sign
-    // let RotT: Mat22 = Mat22.transpose(Rot);
     let invA = Rot.a;
     let invB = Rot.c;
     let invC = Rot.b;
     let invD = Rot.d;
-    // let n: Vec2 = new Vec2(
-    //     -(RotT.a * normalX + RotT.b * normalY),
-    //     -(RotT.c * normalX + RotT.d * normalY)
-    // );
-    // let n: Vec2 = new Vec2(
-    //     -(invA * normalX + invB * normalY),
-    //     -(invC * normalX + invD * normalY)
-    // );
     const nX = -(invA * normalX + invB * normalY);
     const nY = -(invC * normalX + invD * normalY);
     const absX = Math.abs(nX);
     const absY = Math.abs(nY);
-    // let nAbs: Vec2 = Vec2.abs(n);
     const clipVertex0 = new ClipVertex(0, 0);
     const clipVertex1 = new ClipVertex(0, 0);
     if (absX > absY) {
@@ -598,11 +588,6 @@ function ComputeIncidentEdge(c, h, pos, Rot, normalX, normalY) {
             clipVertex1.fp.e.outEdge2 = EdgeNumbers.EDGE4;
         }
     }
-    // clipVertex0.v = Vec2.add(pos, Mat22.mulMV(Rot, clipVertex0.v));
-    // clipVertex1.v = Vec2.add(pos, Mat22.mulMV(Rot, clipVertex1.v));
-    //  inline:
-    // const v0 = clipVertex0.v;
-    // const v1 = clipVertex1.v;
     let mx = pos.x + (Rot.a * clipVertex0.x + Rot.b * clipVertex0.y);
     let my = pos.y + (Rot.c * clipVertex0.x + Rot.d * clipVertex0.y);
     clipVertex0.set(mx, my);
@@ -662,9 +647,7 @@ function ClipSegmentToLine(vOut, vIn, normalX, normalY, offset, clipEdge) {
     //  Start with no output points
     let numOut = 0;
     // Calculate the distance of end points to the line
-    // let distance0 = Vec2.dotXYV(normalX, normalY, vIn[0].v) - offset;
     let distance0 = Vec2.dotXY(normalX, normalY, vIn[0].x, vIn[0].y) - offset;
-    // let distance1 = Vec2.dotXYV(normalX, normalY, vIn[1].v) - offset;
     let distance1 = Vec2.dotXY(normalX, normalY, vIn[1].x, vIn[1].y) - offset;
     // If the points are behind the plane
     if (distance0 <= 0) {
@@ -840,48 +823,23 @@ let faceB1 = new Vec2();
 let faceB2 = new Vec2();
 function Collide(contacts, bodyA, bodyB) {
     // Setup
-    // static mulSV (s: number, v: Vec2): Vec2
-    // {
-    //     return new Vec2(s * v.x, s * v.y);
-    // }
-    // let hA = Vec2.mulSV(0.5, bodyA.width); // half the width of bodyA
-    // let hB = Vec2.mulSV(0.5, bodyB.width); // half the width of bodyB
     //  half the width of bodyA
     hA.set(0.5 * bodyA.width.x, 0.5 * bodyA.width.y);
     //  half the width of bodyB
     hB.set(0.5 * bodyB.width.x, 0.5 * bodyB.width.y);
     let posA = bodyA.position;
     let posB = bodyB.position;
-    // let RotA = new Mat22().set(bodyA.rotation);
-    // let RotB = new Mat22().set(bodyB.rotation);
     RotA.set(bodyA.rotation);
     RotB.set(bodyB.rotation);
     RotAT.transpose(bodyA.rotation);
     RotBT.transpose(bodyB.rotation);
-    // let RotAT = Mat22.transpose(RotA);
-    // let RotBT = Mat22.transpose(RotB);
-    // let dp: Vec2 = Vec2.sub(posB, posA);
     dp.set(posB.x - posA.x, posB.y - posA.y);
-    // static mulMV (m: Mat22, v: Vec2): Vec2
-    // {
-    //     return new Vec2(
-    //         m.a * v.x + m.b * v.y,
-    //         m.c * v.x + m.d * v.y
-    //     );
-    // }
-    // let dA: Vec2 = Mat22.mulMV(RotAT, dp);
     dA.set(RotAT.a * dp.x + RotAT.b * dp.y, RotAT.c * dp.x + RotAT.d * dp.y);
-    // let dB: Vec2 = Mat22.mulMV(RotBT, dp);
     dB.set(RotBT.a * dp.x + RotBT.b * dp.y, RotBT.c * dp.x + RotBT.d * dp.y);
-    // let C = Mat22.mulMM(RotAT, RotB);
     C.mulMM(RotAT, RotB);
-    // let absC = Mat22.abs(C);
     Mat22.absM(C, absC);
-    // let absCT = Mat22.transpose(absC);
     Mat22.transposeM(absC, absCT);
     // Box A faces
-    //                        faceA1                      faceA2
-    // let faceA = Vec2.sub(  Vec2.sub(Vec2.abs(dA), hA), Mat22.mulMV(absC, hB)  );
     faceA1.set(Math.abs(dA.x) - hA.x, Math.abs(dA.y) - hA.y);
     //  store result in faceA2
     Mat22.mulMVV(absC, hB, faceA2);
@@ -890,10 +848,6 @@ function Collide(contacts, bodyA, bodyB) {
         return 0;
     }
     // Box B faces
-    // let faceB = Vec2.sub(
-    //                      faceB1                 faceB2
-    //                      Vec2.sub(Vec2.abs(dB), Mat22.mulMV(absCT, hA)),
-    //                      hB);
     //  store result in faceB2
     Mat22.mulMVV(absCT, hA, faceB2);
     faceB1.set(Math.abs(dB.x) - faceB2.x, Math.abs(dB.y) - faceB2.y);
@@ -905,7 +859,6 @@ function Collide(contacts, bodyA, bodyB) {
     // Box A faces
     let axis = Axis.FACE_A_X;
     let separation = faceA.x;
-    // let normal: Vec2 = (dA.x > 0) ? RotA.col1 : Vec2.neg(RotA.col1);
     let normalX = 0;
     let normalY = 0;
     if (dA.x > 0) {
@@ -987,17 +940,6 @@ function Collide(contacts, bodyA, bodyB) {
         let separation = Vec2.dotXY(frontNormalX, frontNormalY, clipPoints[i].x, clipPoints[i].y) - front;
         if (separation <= 0) {
             contacts[numContacts] = new Contact(separation, normalX, normalY, clipPoints[i].x - (separation * frontNormalX), clipPoints[i].y - (separation * frontNormalY), clipPoints[i].fp);
-            // contacts[numContacts].separation = separation;
-            // contacts[numContacts].normal.set(normalX, normalY);
-            // contacts[numContacts].position = new Vec2(
-            //     clipPoints[i].v.x - (separation * frontNormalX),
-            //     clipPoints[i].v.y - (separation * frontNormalY)
-            // );
-            // contacts[numContacts].position.set(
-            //     clipPoints[i].v.x - (separation * frontNormalX),
-            //     clipPoints[i].v.y - (separation * frontNormalY)
-            // );
-            // contacts[numContacts].feature = clipPoints[i].fp;
             if (axis === Axis.FACE_B_X || axis === Axis.FACE_B_Y) {
                 contacts[numContacts].feature.flip();
             }
@@ -1311,7 +1253,8 @@ class World {
             if (body.invMass === 0) {
                 continue;
             }
-            body.velocity.add(Vec2.mulSV(delta, (Vec2.add(gravity, Vec2.mulSV(body.invMass, body.force)))));
+            body.velocity.x += delta * (gravity.x + (body.invMass * body.force.x));
+            body.velocity.y += delta * (gravity.y + (body.invMass * body.force.y));
             body.angularVelocity += delta * body.invI * body.torque;
         }
         window['step2'] = window['vec2Total'];
@@ -1341,7 +1284,9 @@ class World {
         //  Integrate velocities
         for (let i = 0; i < bodies.length; i++) {
             let body = bodies[i];
-            body.position.add(Vec2.mulSV(delta, body.velocity));
+            // body.position.add(Vec2.mulSV(delta, body.velocity));
+            body.position.x += delta * body.velocity.x;
+            body.position.y += delta * body.velocity.y;
             body.rotation += delta * body.angularVelocity;
             body.force.set(0, 0);
             body.torque = 0;
