@@ -38,7 +38,7 @@ world.addBody(rightWall);
 
 //  Mass box test
 
-for (let i = 0; i < 500; i++)
+for (let i = 0; i < 100; i++)
 {
     let box = new Body(8 + Math.random() * 32, 8 + Math.random() * 32, 10);
 
@@ -99,8 +99,9 @@ function loop ()
         renderer.render(world);
 
         frameText.value = frame.toString();
-        bodiesText.value = world.bodies.length.toString();
+        // bodiesText.value = world.bodies.length.toString();
         // arbitersText.value = world.arbiters.length.toString();
+        bodiesText.value = world.arbiters.length.toString();
         arbitersText.value = window['arbitersTotal'].toString();
 
         frame++;
