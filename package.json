@@ -5,7 +5,8 @@
   "main": "src/index.js",
   "scripts": {
     "build": "rollup -c rollup.config.js",
-    "examples": "rollup -c rollup.examples.config.js"
+    "examples": "rollup -c rollup.examples.config.js",
+    "watchexamples": "rollup --watch -c rollup.examples.config.js"
   },
   "repository": {
     "type": "git",
