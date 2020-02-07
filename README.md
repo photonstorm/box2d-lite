@@ -285,3 +285,7 @@ The downside is that we need to calculate the AABB each step. Easy, if the Body 
 
 The Body class now has `width` and `height` properties. This makes for a better API anyway, oh and it reduces the amount of vec2s created during start-up by 1 per Body instance!
 
+Created a new `AABB` Class. Each Body has a `bounds` property, which is an instance of the AABB class. It is updated during `Body.postStep` to keep the bounds in sync with the body position and rotation. If the body rotation hasn't changed (i.e. if fixed rotation, or just not rotated), then the bounds update uses a fast-path to avoid some math transforms.
+
+The CanvasRenderer can now render a Body bounds, too, with optional flag.
+
