@@ -143,7 +143,9 @@ export default class World
                 continue;
             }
 
-            body.velocity.add(Vec2.mulSV(delta, (Vec2.add(gravity, Vec2.mulSV(body.invMass, body.force)))));
+            body.velocity.x += delta * (gravity.x + (body.invMass * body.force.x));
+            body.velocity.y += delta * (gravity.y + (body.invMass * body.force.y));
+
             body.angularVelocity += delta * body.invI * body.torque;
         }
 
@@ -193,7 +195,9 @@ export default class World
         {
             let body = bodies[i];
 
-            body.position.add(Vec2.mulSV(delta, body.velocity));
+            body.position.x += delta * body.velocity.x;
+            body.position.y += delta * body.velocity.y;
+
             body.rotation += delta * body.angularVelocity;
 
             body.force.set(0, 0);
