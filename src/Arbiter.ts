@@ -43,10 +43,19 @@ export default class Arbiter
         }
 
         this.contacts = [];
+        this.numContacts = 0;
+        this.friction = 0;
 
-        this.numContacts = Collide(this.contacts, this.body1, this.body2);
+        if (this.stillActive())
+        {
+            this.numContacts = Collide(this.contacts, this.body1, this.body2);
+            this.friction = Math.sqrt(this.body1.friction * this.body2.friction);
+        }
+    }
 
-        this.friction = Math.sqrt(this.body1.friction * this.body2.friction);
+    stillActive (): boolean
+    {
+        return this.body1.bounds.intersects(this.body2.bounds);
     }
 
     update (newContacts: Contact[], numNewContacts: number)
