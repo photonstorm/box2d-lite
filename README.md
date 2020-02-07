@@ -87,14 +87,14 @@ Getting there. The renderer really shouldn't add anything! And now it doesn't. A
 
 Let's break-down which part of the `World.step` is causing the most creations:
 
-| Step                                 | vec2 frame 200 | vec 2 frame 600 | mat22 frame 200 &amp; 600 |
-|--------------------------------------|----------------|-----------------|---------------------------|
-| World.broadphase                     | 48,065         | 49,225          | 36,764                    |
-| Integrate forces                     | 48,368         | 49,528          | 36,764                    |
-| Arbiters preStep                     | 48,928         | 51,368          | 36,764                    |
-| Joints preStep                       | 48,937         | 51,377          | 36,772                    |
-| Perform aribter and joint iterations | 62,357         | 95,197          | 36,772                    |
-| Integrate velocities                 | 62,460         | 95,300          | 36,772                    |
+| Step                                 | vec2 - frame 200 | vec 2 - frame 600 | mat22 - frame 200 &amp; 600 |
+|--------------------------------------|------------------|-------------------|-----------------------------|
+| World.broadphase                     | 48,065           | 49,225            | 36,764                      |
+| Integrate forces                     | 48,368           | 49,528            | 36,764                      |
+| Arbiters preStep                     | 48,928           | 51,368            | 36,764                      |
+| Joints preStep                       | 48,937           | 51,377            | 36,772                      |
+| Perform aribter and joint iterations | 62,357           | 95,197            | 36,772                      |
+| Integrate velocities                 | 62,460           | 95,300            | 36,772                      |
 
 So, for vec2s the majority happen in `World.broadphase` and then a massive jump when performing arbiter and joint iterations.
 
@@ -115,23 +115,14 @@ This is a 19.6126% decrease on Frame 200 and a massive 43.3389% decrease on Fram
 
 Let's check our `World.step` stats again:
 
-Frame 200:
-
-1) 48,163 - World.broadphase
-2) 48,466 - Integrate forces
-3) 49,138 - Arbiters preStep
-4) 49,147 - Joints preStep
-5) 50,107 - Perform aribter and joint iterations
-6) 50,210 - Integrate velocities
-
-Frame 600:
-
-1) 49,287 - World.broadphase
-2) 49,590 - Integrate forces
-3) 51,446 - Arbiters preStep
-4) 51,455 - Joints preStep
-5) 53,895 - Perform aribter and joint iterations
-6) 53,998 - Integrate velocities
+| Step                                 | vec2 - frame 200 | vec 2 - frame 600 |
+|--------------------------------------|------------------|-------------------|
+| World.broadphase                     | 48,163           | 49,287            |
+| Integrate forces                     | 48,466           | 49,590            |
+| Arbiters preStep                     | 49,138           | 51,446            |
+| Joints preStep                       | 49,147           | 51,455            |
+| Perform aribter and joint iterations | 50,107           | 53,895            |
+| Integrate velocities                 | 62,460           | 53,998            |
 
 At this stage, it doesn't matter if the bodies are in contact or not, we're getting a much more steady count.
 
@@ -182,36 +173,42 @@ Also, a 38.2217% decrease is pretty good. But, I'm sure we can go further withou
 
 Let's check to see where these instances are coming from in the `World.step` again:
 
-1) 0 - World.broadphase
-2) 303 - Integrate forces
-3) 303 - Arbiters preStep
-4) 312 - Joints preStep
-5) 432 - Perform aribter and joint iterations
-6) 535 - Integrate velocities
+| Step                                 | vec2 - frame 200 &amp; 600 |
+|--------------------------------------|----------------------------|
+| World.broadphase                     | 0                          |
+| Integrate forces                     | 303                        |
+| Arbiters preStep                     | 303                        |
+| Joints preStep                       | 312                        |
+| Perform aribter and joint iterations | 432                        |
+| Integrate velocities                 | 535                        |
 
-Both Frame 200 and 600 are identical now.
+Both Frames 200 and 600 are identical now.
 
 Clearly, the biggest jump is from the integration of the forces. We also get another jump from joints. I've not touched the Joints class yet, so this isn't surprising. Let's inline the forces first, we could probably use a few cache vars in the World class to achieve this.
 
 After inling the force integration on the bodies:
 
-1) 0 - World.broadphase
-2) 0 - Integrate forces
-3) 0 - Arbiters preStep
-4) 9 - Joints preStep
-5) 129 - Perform aribter and joint iterations
-6) 232 - Integrate velocities
+| Step                                 | vec2 - frame 200 &amp; 600 |
+|--------------------------------------|----------------------------|
+| World.broadphase                     | 0                          |
+| Integrate forces                     | 0                          |
+| Arbiters preStep                     | 0                          |
+| Joints preStep                       | 9                          |
+| Perform aribter and joint iterations | 129                        |
+| Integrate velocities                 | 232                        |
 
 Perfect, let's do the same for the velocity integration:
 
-1) 0 - World.broadphase
-2) 0 - Integrate forces
-3) 0 - Arbiters preStep
-4) 9 - Joints preStep
-5) 129 - Perform aribter and joint iterations
-6) 129 - Integrate velocities
+| Step                                 | vec2 - frame 200 &amp; 600 |
+|--------------------------------------|----------------------------|
+| World.broadphase                     | 0                          |
+| Integrate forces                     | 0                          |
+| Arbiters preStep                     | 0                          |
+| Joints preStep                       | 9                          |
+| Perform aribter and joint iterations | 129                        |
+| Integrate velocities                 | 129                        |
 
-There, we've eliminated the instance creation between part 5 and 6 of the world step. At the end of this version we're now at:
+There, we've eliminated the instance creation during velocity integration. At the end of this version we're now at:
 
 ```
 Frame: 200 = 129 vec2s - 8 mat22s
