@@ -254,3 +254,11 @@ Built a body stack test. It highlights that the default friction causes slipping
 
 `World.positionCorrection` has now changed from a boolean to a float. This removes a ternary in the Arbiter class and just makes more sense anyway.
 
+A `World.allowedPenetration` property has been added. This is the slop value, the amount two bodies are allowed to penetrate each other, so it makes sense to be able to configure it.
+
+Also added the ability to disable each part of the render process (bodies, contacts and joints).
+
+The issue now is one of performance. With 100 bodies everything is 60fps and happy as larry. With 300 bodies it _really_ struggles. So, the next task is to try some basic support for broadphase and see what happens. If it still doesn't make much difference, I'll knock this project on the head as a fun experiment, and move on.
+
+## v0.5.0
+
