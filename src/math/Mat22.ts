@@ -30,8 +30,6 @@ export default class Mat22
         //  col2
         this.b = b;
         this.d = d;
-
-        window['mat22Total']++;
     }
 
     set (v: number)

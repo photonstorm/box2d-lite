@@ -20,8 +20,6 @@ export default class Vec2
     {
         this.x = x;
         this.y = y;
-
-        window['vec2Total']++;
     }
 
     set (x: number = 0, y: number = 0)

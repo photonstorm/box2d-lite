@@ -4,6 +4,9 @@ import Joint from '../src/Joint';
 import World from '../src/World';
 import Vec2 from '../src/math/Vec2';
 
+window['vec2Total'] = 0;
+window['mat22Total'] = 0;
+
 let delta = 1 / 30;
 let world = new World(new Vec2(0, 40), 10);
 
@@ -48,8 +51,10 @@ let pause = true;
 let frame = 0;
 
 let frameText = document.getElementById('frame') as HTMLFormElement;
-let bodiesText = document.getElementById('bodies') as HTMLFormElement;
-let arbitersText = document.getElementById('arbiters') as HTMLFormElement;
+let vec2Text = document.getElementById('vec2') as HTMLFormElement;
+let mat22Text = document.getElementById('mat22') as HTMLFormElement;
+let frame200Text = document.getElementById('frame200') as HTMLFormElement;
+let frame600Text = document.getElementById('frame600') as HTMLFormElement;
 
 document.getElementById('pause').addEventListener('click', () => {
 
@@ -57,8 +62,33 @@ document.getElementById('pause').addEventListener('click', () => {
 
 });
 
+function showStepStats (text)
+{
+    const debug = [
+        '1)',
+        window['step1'],
+        '2)',
+        window['step2'],
+        '3)',
+        window['step3'],
+        '4)',
+        window['step4'],
+        '5)',
+        window['step5'],
+        '6)',
+        window['step6']
+    ];
+
+    text.value = debug.join(' ');
+}
+
+console.log('start-up: ', window['vec2Total'], window['mat22Total']);
+
 function loop ()
 {
+    window['vec2Total'] = 0;
+    window['mat22Total'] = 0;
+
     if (!pause)
     {
         world.step(delta);
@@ -66,8 +96,19 @@ function loop ()
         renderer.render(world);
 
         frameText.value = frame.toString();
-        bodiesText.value = world.bodies.length.toString();
-        arbitersText.value = world.arbiters.length.toString();
+        vec2Text.value = window['vec2Total'].toString();
+        mat22Text.value = window['mat22Total'].toString();
+
+        if (frame === 200)
+        {
+            // showStepStats(frame200Text);
+            frame200Text.value = 'vec2: ' + vec2Text.value + ' mat22: ' + mat22Text.value + ' arbiters: ' + world.arbiters.length + ' bodies: ' + world.bodies.length;
+        }
+        else if (frame === 600)
+        {
+            // showStepStats(frame600Text);
+            frame600Text.value = 'vec2: ' + vec2Text.value + ' mat22: ' + mat22Text.value + ' arbiters: ' + world.arbiters.length + ' bodies: ' + world.bodies.length;
+        }
 
         frame++;
     }

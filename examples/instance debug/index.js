@@ -14,6 +14,7 @@ class Vec2 {
     constructor(x = 0, y = 0) {
         this.x = x;
         this.y = y;
+        window['vec2Total']++;
     }
     set(x = 0, y = 0) {
         this.x = x;
@@ -158,6 +159,7 @@ class Mat22 {
         //  col2
         this.b = b;
         this.d = d;
+        window['mat22Total']++;
     }
     set(v) {
         const c = Math.cos(v);
@@ -394,6 +396,14 @@ class Joint {
         Rot2T.transpose(body2.rotation);
         Vec2.subV(anchor, body1.position, v1);
         Vec2.subV(anchor, body2.position, v2);
+        // v1.set(
+        //     anchor.x - body1.position.x,
+        //     anchor.y - body1.position.y
+        // );
+        // v2.set(
+        //     anchor.x - body2.position.x,
+        //     anchor.y - body2.position.y
+        // );
         Mat22.mulMVV(Rot1T, v1, this.localAnchor1);
         Mat22.mulMVV(Rot2T, v2, this.localAnchor2);
     }
@@ -1354,6 +1364,7 @@ class World {
     step(delta) {
         let inverseDelta = (delta > 0) ? 1 / delta : 0;
         this.broadPhase();
+        window['step1'] = window['vec2Total'];
         //  Integrate forces
         const bodies = this.bodies;
         const gravity = this.gravity;
@@ -1366,15 +1377,18 @@ class World {
             body.velocity.y += delta * (gravity.y + (body.invMass * body.force.y));
             body.angularVelocity += delta * body.invI * body.torque;
         }
+        window['step2'] = window['vec2Total'];
         //  Pre-steps
         const arbiters = this.arbiters;
         const joints = this.joints;
         for (let i = 0; i < arbiters.length; i++) {
             arbiters[i].second.preStep(inverseDelta);
         }
+        window['step3'] = window['vec2Total'];
         for (let i = 0; i < joints.length; i++) {
             joints[i].preStep(inverseDelta);
         }
+        window['step4'] = window['vec2Total'];
         //  Perform iterations
         for (let i = 0; i < this.iterations; i++) {
             //  Apply impulse
@@ -1386,6 +1400,7 @@ class World {
                 joints[j].applyImpulse();
             }
         }
+        window['step5'] = window['vec2Total'];
         //  Integrate velocities
         for (let i = 0; i < bodies.length; i++) {
             let body = bodies[i];
@@ -1395,9 +1410,12 @@ class World {
             body.force.set(0, 0);
             body.torque = 0;
         }
+        window['step6'] = window['vec2Total'];
     }
 }
 
+window['vec2Total'] = 0;
+window['mat22Total'] = 0;
 let delta = 1 / 30;
 let world = new World(new Vec2(0, 40), 10);
 let floor = new Body(new Vec2(2000, 80), Number.MAX_VALUE);
@@ -1429,18 +1447,31 @@ let renderer = new CanvasRenderer(document.getElementById('demo'));
 let pause = true;
 let frame = 0;
 let frameText = document.getElementById('frame');
-let bodiesText = document.getElementById('bodies');
-let arbitersText = document.getElementById('arbiters');
+let vec2Text = document.getElementById('vec2');
+let mat22Text = document.getElementById('mat22');
+let frame200Text = document.getElementById('frame200');
+let frame600Text = document.getElementById('frame600');
 document.getElementById('pause').addEventListener('click', () => {
     pause = (pause) ? false : true;
 });
+console.log('start-up: ', window['vec2Total'], window['mat22Total']);
 function loop() {
+    window['vec2Total'] = 0;
+    window['mat22Total'] = 0;
     if (!pause) {
         world.step(delta);
         renderer.render(world);
         frameText.value = frame.toString();
-        bodiesText.value = world.bodies.length.toString();
-        arbitersText.value = world.arbiters.length.toString();
+        vec2Text.value = window['vec2Total'].toString();
+        mat22Text.value = window['mat22Total'].toString();
+        if (frame === 200) {
+            // showStepStats(frame200Text);
+            frame200Text.value = 'vec2: ' + vec2Text.value + ' mat22: ' + mat22Text.value + ' arbiters: ' + world.arbiters.length + ' bodies: ' + world.bodies.length;
+        }
+        else if (frame === 600) {
+            // showStepStats(frame600Text);
+            frame600Text.value = 'vec2: ' + vec2Text.value + ' mat22: ' + mat22Text.value + ' arbiters: ' + world.arbiters.length + ' bodies: ' + world.bodies.length;
+        }
         frame++;
     }
     requestAnimationFrame(loop);

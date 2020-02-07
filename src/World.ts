@@ -127,8 +127,6 @@ export default class World
 
         this.broadPhase();
 
-        window['step1'] = window['vec2Total'];
-
         //  Integrate forces
 
         const bodies = this.bodies;
@@ -149,8 +147,6 @@ export default class World
             body.angularVelocity += delta * body.invI * body.torque;
         }
 
-        window['step2'] = window['vec2Total'];
-
         //  Pre-steps
 
         const arbiters = this.arbiters;
@@ -161,14 +157,10 @@ export default class World
             arbiters[i].second.preStep(inverseDelta);
         }
 
-        window['step3'] = window['vec2Total'];
-
         for (let i: number = 0; i < joints.length; i++)
         {
             joints[i].preStep(inverseDelta);
         }
-
-        window['step4'] = window['vec2Total'];
         
         //  Perform iterations
 
@@ -186,8 +178,6 @@ export default class World
                 joints[j].applyImpulse();
             }
         }
-
-        window['step5'] = window['vec2Total'];
         
         //  Integrate velocities
 
@@ -203,7 +193,5 @@ export default class World
             body.force.set(0, 0);
             body.torque = 0;
         }
-
-        window['step6'] = window['vec2Total'];
     }
 }
