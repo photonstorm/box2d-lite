@@ -19,6 +19,7 @@ class Vec2 {
     set(x = 0, y = 0) {
         this.x = x;
         this.y = y;
+        return this;
     }
     add(v) {
         this.x += v.x;
@@ -35,14 +36,23 @@ class Vec2 {
     static add(vA, vB) {
         return new Vec2(vA.x + vB.x, vA.y + vB.y);
     }
+    static addV(vA, vB, out) {
+        return out.set(vA.x + vB.x, vA.y + vB.y);
+    }
     static sub(vA, vB) {
         return new Vec2(vA.x - vB.x, vA.y - vB.y);
+    }
+    static subV(vA, vB, out) {
+        return out.set(vA.x - vB.x, vA.y - vB.y);
     }
     static mulVV(vA, vB) {
         return new Vec2(vA.x * vB.x, vA.y * vB.y);
     }
     static mulSV(s, v) {
         return new Vec2(s * v.x, s * v.y);
+    }
+    static mulSVV(s, v, out) {
+        return out.set(s * v.x, s * v.y);
     }
     static abs(v) {
         return new Vec2(Math.abs(v.x), Math.abs(v.y));
@@ -73,6 +83,9 @@ class Vec2 {
     }
     static crossSV(s, v) {
         return new Vec2(-s * v.y, s * v.x);
+    }
+    static crossSVV(s, v, out) {
+        return out.set(-s * v.y, s * v.x);
     }
 }
 
@@ -157,6 +170,13 @@ class Mat22 {
         this.d = c;
         return this;
     }
+    setValues(a, c, b, d) {
+        this.a = a;
+        this.c = c;
+        this.b = b;
+        this.d = d;
+        return this;
+    }
     setFromVec2(vA, vB) {
         this.a = vA.x;
         this.c = vA.y;
@@ -182,6 +202,9 @@ class Mat22 {
     }
     static add(mA, mB) {
         return new Mat22(mA.a + mB.a, mA.c + mB.c, mA.b + mB.b, mA.d + mB.d);
+    }
+    static addV(mA, mB, out) {
+        return out.setValues(mA.a + mB.a, mA.c + mB.c, mA.b + mB.b, mA.d + mB.d);
     }
     static mulMV(m, v) {
         return new Vec2(m.a * v.x + m.b * v.y, m.c * v.x + m.d * v.y);
@@ -224,6 +247,14 @@ class Mat22 {
         const d = m.d;
         let det = 1 / (a * d - b * c);
         return new Mat22(det * d, det * -b, det * -c, det * a);
+    }
+    static invertV(m, out) {
+        const a = m.a;
+        const c = m.c;
+        const b = m.b;
+        const d = m.d;
+        let det = 1 / (a * d - b * c);
+        return out.setValues(det * d, det * -b, det * -c, det * a);
     }
 }
 
@@ -329,6 +360,20 @@ class CanvasRenderer {
  *
  * Ported to TypeScript by Richard Davey, 2020.
  */
+let Rot1 = new Mat22();
+let Rot2 = new Mat22();
+let Rot1T = new Mat22();
+let Rot2T = new Mat22();
+let K1 = new Mat22();
+let K2 = new Mat22();
+let K3 = new Mat22();
+let K4 = new Mat22();
+let K = new Mat22();
+let v1 = new Vec2();
+let v2 = new Vec2();
+let v3 = new Vec2();
+let v4 = new Vec2();
+let impulse = new Vec2();
 class Joint {
     constructor() {
         this.M = new Mat22();
@@ -337,7 +382,7 @@ class Joint {
         this.r1 = new Vec2();
         this.r2 = new Vec2();
         this.bias = new Vec2();
-        this.P = new Vec2(); // accumulated impulse
+        this.P = new Vec2();
         this.biasFactor = 0.2;
         this.softness = 0;
     }
@@ -345,64 +390,139 @@ class Joint {
         this.world = world;
         this.body1 = body1;
         this.body2 = body2;
-        let Rot1 = new Mat22().set(body1.rotation);
-        let Rot2 = new Mat22().set(body2.rotation);
-        let Rot1T = Mat22.transpose(Rot1);
-        let Rot2T = Mat22.transpose(Rot2);
-        this.localAnchor1 = Mat22.mulMV(Rot1T, Vec2.sub(anchor, body1.position));
-        this.localAnchor2 = Mat22.mulMV(Rot2T, Vec2.sub(anchor, body2.position));
+        Rot1.set(body1.rotation);
+        Rot2.set(body2.rotation);
+        Rot1T.transpose(body1.rotation);
+        Rot2T.transpose(body2.rotation);
+        Vec2.subV(anchor, body1.position, v1);
+        Vec2.subV(anchor, body2.position, v2);
+        // v1.set(
+        //     anchor.x - body1.position.x,
+        //     anchor.y - body1.position.y
+        // );
+        // v2.set(
+        //     anchor.x - body2.position.x,
+        //     anchor.y - body2.position.y
+        // );
+        Mat22.mulMVV(Rot1T, v1, this.localAnchor1);
+        Mat22.mulMVV(Rot2T, v2, this.localAnchor2);
     }
     preStep(inverseDelta) {
         const body1 = this.body1;
         const body2 = this.body2;
         //  Pre-compute anchors, mass matrix and bias
-        let Rot1 = new Mat22().set(body1.rotation);
-        let Rot2 = new Mat22().set(body2.rotation);
-        let r1 = Mat22.mulMV(Rot1, this.localAnchor1);
-        let r2 = Mat22.mulMV(Rot2, this.localAnchor2);
+        // let Rot1 = new Mat22().set(body1.rotation);
+        // let Rot2 = new Mat22().set(body2.rotation);
+        Rot1.set(body1.rotation);
+        Rot2.set(body2.rotation);
+        let r1 = Mat22.mulMVV(Rot1, this.localAnchor1, this.r1);
+        let r2 = Mat22.mulMVV(Rot2, this.localAnchor2, this.r2);
         //  Inverse mass matrix
-        let K1 = new Mat22(body1.invMass + body2.invMass, 0, 0, body1.invMass + body2.invMass);
+        K1.setValues(body1.invMass + body2.invMass, 0, 0, body1.invMass + body2.invMass);
+        // let K1 = new Mat22(
+        //     body1.invMass + body2.invMass,
+        //     0,
+        //     0,
+        //     body1.invMass + body2.invMass
+        // );
         //  body1 rotational mass matrix i.e. moment of inertia
-        let K2 = new Mat22(body1.invI * r1.y * r1.y, -body1.invI * r1.x * r1.y, -body1.invI * r1.x * r1.y, body1.invI * r1.x * r1.x);
+        K2.setValues(body1.invI * r1.y * r1.y, -body1.invI * r1.x * r1.y, -body1.invI * r1.x * r1.y, body1.invI * r1.x * r1.x);
+        // let K2 = new Mat22(
+        //     body1.invI * r1.y * r1.y,
+        //     -body1.invI * r1.x * r1.y,
+        //     -body1.invI * r1.x * r1.y,
+        //     body1.invI * r1.x * r1.x
+        // );
         //  body2 rotational mass matrix i.e. moment of inertia
-        let K3 = new Mat22(body2.invI * r2.y * r2.y, -body2.invI * r2.x * r2.y, -body2.invI * r2.x * r2.y, body2.invI * r2.x * r2.x);
-        let K = Mat22.add(Mat22.add(K1, K2), K3);
+        K3.setValues(body2.invI * r2.y * r2.y, -body2.invI * r2.x * r2.y, -body2.invI * r2.x * r2.y, body2.invI * r2.x * r2.x);
+        // let K3 = new Mat22(
+        //     body2.invI * r2.y * r2.y,
+        //     -body2.invI * r2.x * r2.y,
+        //     -body2.invI * r2.x * r2.y,
+        //     body2.invI * r2.x * r2.x
+        // );
+        //  K4 holds the output
+        Mat22.addV(K1, K2, K4);
+        //  K holds the output
+        Mat22.addV(K4, K3, K);
+        // let K = Mat22.add(Mat22.add(K1, K2), K3);
         K.a += this.softness;
         K.d += this.softness;
-        this.M = Mat22.invert(K);
-        let p1 = Vec2.add(body1.position, r1);
-        let p2 = Vec2.add(body2.position, r2);
-        let dp = Vec2.sub(p2, p1);
+        //  this.M holds the output
+        Mat22.invertV(K, this.M);
+        // this.M = Mat22.invert(K);
+        // let p1 = Vec2.add(body1.position, r1);
+        // v1.set(
+        //     body1.position.x + r1.x,
+        //     body1.position.y + r1.y
+        // );
+        Vec2.addV(body1.position, r1, v1);
+        // let p2 = Vec2.add(body2.position, r2);
+        // v2.set(
+        //     body2.position.x + r2.x,
+        //     body2.position.y + r2.y
+        // );
+        Vec2.addV(body2.position, r2, v2);
+        // let dp = Vec2.sub(p2, p1);
+        // v3.set(
+        //     v2.x - v1.x,
+        //     v2.y - v1.y
+        // );
+        Vec2.subV(v2, v1, v3);
         if (this.world.positionCorrection) {
-            this.bias = Vec2.mulSV(-this.biasFactor, Vec2.mulSV(inverseDelta, dp));
+            // this.bias = Vec2.mulSV(-this.biasFactor, Vec2.mulSV(inverseDelta, dp));
+            // this.bias = Vec2.mulSV(-this.biasFactor, Vec2.mulSVV(inverseDelta, v3, v1));
+            Vec2.mulSVV(-this.biasFactor, Vec2.mulSVV(inverseDelta, v3, v1), this.bias);
         }
         else {
             this.bias.set(0, 0);
         }
         if (this.world.warmStarting) {
             // Apply accumulated impulse.
-            body1.velocity.sub(Vec2.mulSV(body1.invMass, this.P));
+            // body1.velocity.sub(Vec2.mulSV(body1.invMass, this.P));
+            body1.velocity.sub(Vec2.mulSVV(body1.invMass, this.P, v1));
             body1.angularVelocity -= body1.invI * Vec2.crossVV(r1, this.P);
-            body2.velocity.add(Vec2.mulSV(body2.invMass, this.P));
+            // body2.velocity.add(Vec2.mulSV(body2.invMass, this.P));
+            body2.velocity.add(Vec2.mulSVV(body2.invMass, this.P, v1));
             body2.angularVelocity += body2.invI * Vec2.crossVV(r2, this.P);
         }
         else {
             this.P.set(0, 0);
         }
-        this.r1 = r1;
-        this.r2 = r2;
+        // this.r1 = r1;
+        // this.r2 = r2;
     }
     applyImpulse() {
         const body1 = this.body1;
         const body2 = this.body2;
         const r1 = this.r1;
         const r2 = this.r2;
-        let dv = Vec2.sub(Vec2.sub(Vec2.add(body2.velocity, Vec2.crossSV(body2.angularVelocity, r2)), body1.velocity), Vec2.crossSV(body1.angularVelocity, r1));
-        let impulse = new Vec2();
-        impulse = Mat22.mulMV(this.M, Vec2.sub(Vec2.sub(this.bias, dv), Vec2.mulSV(this.softness, this.P)));
-        body1.velocity.sub(Vec2.mulSV(body1.invMass, impulse));
+        // let dv = Vec2.sub(
+        //     Vec2.sub(Vec2.add(body2.velocity, Vec2.crossSV(body2.angularVelocity, r2)), body1.velocity),
+        //     Vec2.crossSV(body1.angularVelocity, r1)
+        // );
+        //     Vec2.sub(                                        v3
+        //       Vec2.add(body2.velocity,                       v2
+        //         Vec2.crossSV(body2.angularVelocity, r2)),    v1
+        //       body1.velocity),
+        Vec2.crossSVV(body2.angularVelocity, r2, v1);
+        Vec2.addV(body2.velocity, v1, v2);
+        Vec2.subV(v2, body1.velocity, v3);
+        Vec2.crossSVV(body1.angularVelocity, r1, v4);
+        //  keep v1 (v2, v3, v4 can be re-used)
+        let dv = Vec2.subV(v3, v4, v1);
+        // let impulse = new Vec2();
+        // Vec2.sub(this.bias, dv) = v2
+        Vec2.subV(this.bias, dv, v2);
+        // Vec2.mulSV(this.softness, this.P) = v3
+        Vec2.mulSVV(this.softness, this.P, v3);
+        Vec2.subV(v2, v3, v4);
+        //                      v4              v2                       v3
+        // Mat22.mulMVV(this.M, Vec2.sub(Vec2.sub(this.bias, dv), Vec2.mulSV(this.softness, this.P)), impulse);
+        Mat22.mulMVV(this.M, v4, impulse);
+        body1.velocity.sub(Vec2.mulSVV(body1.invMass, impulse, v1));
         body1.angularVelocity -= body1.invI * Vec2.crossVV(r1, impulse);
-        body2.velocity.add(Vec2.mulSV(body2.invMass, impulse));
+        body2.velocity.add(Vec2.mulSVV(body2.invMass, impulse, v1));
         body2.angularVelocity += body2.invI * Vec2.crossVV(r2, impulse);
         this.P.add(impulse);
     }
@@ -1284,7 +1404,6 @@ class World {
         //  Integrate velocities
         for (let i = 0; i < bodies.length; i++) {
             let body = bodies[i];
-            // body.position.add(Vec2.mulSV(delta, body.velocity));
             body.position.x += delta * body.velocity.x;
             body.position.y += delta * body.velocity.y;
             body.rotation += delta * body.angularVelocity;

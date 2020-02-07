@@ -8,13 +8,13 @@ All classes ported. Test bed created. Everything runs, but it's generating a sta
 
 20 world iterations:
 
-Frame: 200 = 201,806 vec2s - 36,926 mat22s
-Frame: 600 = 274,009 vec2s - 37,007 mat22s
+* Frame: 200 = 201,806 vec2s - 36,926 mat22s
+* Frame: 600 = 274,009 vec2s - 37,007 mat22s
 
 10 world iterations:
 
-Frame: 200 = 190,846 vec2s - 36,929 mat22s
-Frame: 600 = 226,913 vec2s - 37,007 mat22s
+* Frame: 200 = 190,846 vec2s - 36,929 mat22s
+* Frame: 600 = 226,913 vec2s - 37,007 mat22s
 
 All tests from now will use 10 iterations.
 
@@ -208,3 +208,17 @@ The final part has to be looking at the joints, as these are the only thing caus
 
 ## v0.3.0
 
+Recoded the Joints class to use some local cached vars for immediate math functions, managed to get the stats down to this:
+
+Frame: 200 = 0 vec2s - 0 mat22s
+Frame: 600 = 0 vec2s - 0 mat22s
+
+Yup! Not one single new vec2 or mat22 instance is being created during a World.step now. A bit of an improvement from the 270,000 we had at the start of the day :) All math has been either inlined or moved to cached instances.
+
+The test case creates a total of 529 vec2s and 3 mat22s when the simulation starts-up (after creating 103 bodies and a joint). Each body has 4 vec2s, which accounts for 412 of them. Joints have 6 and the rest are created by the classes as cache vars.
+
+To be honest, the Body class could remove 1 (the `width` property), to be swapped for `width` and `height` numbers, which would make more sense anyway.
+
+The Joint class has a whole bunch it doesn't really need and it'd be worth investigating further what could be removed.
+
+For now, though, this is a great conclusion. 100% reduction in instance creation is about as good as you can get :)
