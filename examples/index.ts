@@ -76,19 +76,10 @@ function showStepStats (text)
         '5)',
         window['step5'],
         '6)',
-        window['step6'],
-        '7)',
-        window['step7']
+        window['step6']
     ];
 
     text.value = debug.join(' ');
-}
-
-function showBodyStats ()
-{
-    world.bodies.forEach((body) => {
-        console.log(body.id, body.total);
-    });
 }
 
 console.log('start-up: ', window['vec2Total'], window['mat22Total']);
@@ -111,16 +102,11 @@ function loop ()
         if (frame === 200)
         {
             // showStepStats(frame200Text);
-            // console.log('200');
-            // showBodyStats();
             frame200Text.value = 'vec2: ' + vec2Text.value + ' mat22: ' + mat22Text.value + ' arbiters: ' + world.arbiters.length + ' bodies: ' + world.bodies.length;
         }
         else if (frame === 600)
         {
             // showStepStats(frame600Text);
-            // console.log('');
-            // console.log('600');
-            // showBodyStats();
             frame600Text.value = 'vec2: ' + vec2Text.value + ' mat22: ' + mat22Text.value + ' arbiters: ' + world.arbiters.length + ' bodies: ' + world.bodies.length;
         }
 

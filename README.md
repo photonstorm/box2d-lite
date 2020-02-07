@@ -144,3 +144,14 @@ This is a 3.93149% decrease on Frame 200 and 9.87444% decrease on Frame 600.
 
 ## v0.0.9
 
+Have gone through the Collide function and used a set of 7 locally cached Mat22 instances and added a few modifier functions that operate on existing instances. Also cached all vec2 instances in the same function. The end result speaks for itself:
+
+Frame: 200 = 684 vec2s - 8 mat22s
+Frame: 600 = 866 vec2s - 8 mat22s
+
+This is a 98.582% decrease on Frame 200 and 98.2205% decrease on Frame 600 for vec2s, and a huge 99.9782% decrease for the mat22s :)
+
+Pretty happy with just 8 mat22s in the entire test! We're still creating ~700 vec2s per frame, though. That is well within an acceptable range, but it'd be good to see if we can push this any further.
+
+## v0.1.0
+
