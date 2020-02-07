@@ -2,7 +2,7 @@
 
 This is a port of Erin Catto's [Box2D Lite](https://github.com/erincatto/box2d-lite) to TypeScript.
 
-[![image](pages/instancetest.png)]
+![image](pages/instancetest.png)
 
 ## v0.0.1
 
@@ -31,11 +31,11 @@ Why frames 200 and 600? Because in Frame 200 most of the bodies are in the air, 
 
 Here is a the performance monitor flamechart capture of a single frame (frame 200):
 
-[![pages/flamechartv000.png]]
+![image](pages/flamechartv000.png)
 
 As you can see, we're already over our frame budget at 18.8ms (53fps) and the heap space fluctuates wildly. The callstack isn't much better:
 
-[![pages/callstackv000.png]]
+![image](pages/callstackv000.png)
 
 ## v0.0.2
 
@@ -261,11 +261,10 @@ The Joint class has a whole bunch it doesn't really need and it'd be worth inves
 
 Here is a the performance monitor flamechart capture of a single frame (frame 200):
 
-[![pages/flamechartv030.png]]
+![image](pages/flamechartv030.png)
 
 Much better! the heap is almost half the size, our frame rate is a solid 60fps and our callstack is equally cleaner:
 
-[![pages/callstackv030.png]]
+![image](pages/flamechartv030.png)
 
 Clearly, the Mat22 transpose method is eating-up a bit, as is the creation of new Contacts, but this is a dramatic improvement over what we started with and leaves us in a good place to move to the next version. After all, a 100% reduction in instance creation is about as good as you can get :)
-
