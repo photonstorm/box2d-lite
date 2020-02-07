@@ -51,20 +51,20 @@ export default class Arbiter
 
     update (newContacts: Contact[], numNewContacts: number)
     {
-        let mergedContacts = [];
+        let mergedContacts: Contact[] = [];
 
-        let contacts = this.contacts;
-        let numContacts = this.numContacts;
-        let warmStarting = this.world.warmStarting;
+        let contacts: Contact[] = this.contacts;
+        let numContacts: number = this.numContacts;
+        let warmStarting: boolean = this.world.warmStarting;
 
         for (let i: number = 0; i < numNewContacts; i++)
         {
-            let cNew = newContacts[i];
-            let k = -1;
+            let cNew: Contact = newContacts[i];
+            let k: number = -1;
 
             for (let j: number = 0; j < numContacts; j++)
             {
-                let cOld = contacts[j];
+                let cOld: Contact = contacts[j];
 
                 if (cNew.feature.value === cOld.feature.value)
                 {
@@ -75,7 +75,7 @@ export default class Arbiter
 
             if (k > -1)
             {
-                let cOld = contacts[k];
+                let cOld: Contact = contacts[k];
 
                 if (warmStarting)
                 {
@@ -107,41 +107,41 @@ export default class Arbiter
         //  slop
         const allowedPenetration = 0.01;
 
-        let contacts = this.contacts;
-        let numContacts = this.numContacts;
-        let biasFactor = (this.world.positionCorrection) ? 0.2 : 0;
-        let body1 = this.body1;
-        let body2 = this.body2;
-        let accumulateImpulses = this.world.accumulateImpulses;
+        let contacts: Contact[] = this.contacts;
+        let numContacts: number = this.numContacts;
+        let biasFactor: number = (this.world.positionCorrection) ? 0.2 : 0;
+        let body1: Body = this.body1;
+        let body2: Body = this.body2;
+        let accumulateImpulses: boolean = this.world.accumulateImpulses;
 
         for (let i: number = 0; i < numContacts; i++)
         {
-            let c = contacts[i];
+            let c: Contact = contacts[i];
 
-            let r1X = c.positionX - body1.position.x;
-            let r1Y = c.positionY - body1.position.y;
+            let r1X: number = c.positionX - body1.position.x;
+            let r1Y: number = c.positionY - body1.position.y;
 
-            let r2X = c.positionX - body2.position.x;
-            let r2Y = c.positionY - body2.position.y;
+            let r2X: number = c.positionX - body2.position.x;
+            let r2Y: number = c.positionY - body2.position.y;
 
             //  Precompute normal mass, tangent mass and bias
 
-            let rn1 = Vec2.dotXY(r1X, r1Y, c.normalX, c.normalY);
-            let rn2 = Vec2.dotXY(r2X, r2Y, c.normalX, c.normalY);
+            let rn1: number = Vec2.dotXY(r1X, r1Y, c.normalX, c.normalY);
+            let rn2: number = Vec2.dotXY(r2X, r2Y, c.normalX, c.normalY);
 
-            let normal = body1.invMass + body2.invMass;
+            let normal: number = body1.invMass + body2.invMass;
 
             normal += body1.invI * (Vec2.dotXY(r1X, r1Y, r1X, r1Y) - rn1 * rn1) + body2.invI * (Vec2.dotXY(r2X, r2Y, r2X, r2Y) - rn2 * rn2);
 
             c.massNormal = 1 / normal;
 
-            let tangentX = c.normalY;
-            let tangentY = -1 * c.normalX;
+            let tangentX: number = c.normalY;
+            let tangentY: number = -1 * c.normalX;
 
-            let rt1 = Vec2.dotXY(r1X, r1Y, tangentX, tangentY);
-            let rt2 = Vec2.dotXY(r2X, r2Y, tangentX, tangentY);
+            let rt1: number = Vec2.dotXY(r1X, r1Y, tangentX, tangentY);
+            let rt2: number = Vec2.dotXY(r2X, r2Y, tangentX, tangentY);
 
-            let kTangent = body1.invMass + body2.invMass;
+            let kTangent: number = body1.invMass + body2.invMass;
 
             kTangent += body1.invI * (Vec2.dotXY(r1X, r1Y, r1X, r1Y) - rt1 * rt1) + body2.invI * (Vec2.dotXY(r2X, r2Y, r2X, r2Y) - rt2 * rt2);
 
@@ -153,8 +153,8 @@ export default class Arbiter
             {
                 //  Normal + Friction impulse
 
-                let pX = (c.Pn * c.normalX) + (c.Pt * tangentX);
-                let pY = (c.Pn * c.normalY) + (c.Pt * tangentY);
+                let pX: number = (c.Pn * c.normalX) + (c.Pt * tangentX);
+                let pY: number = (c.Pn * c.normalY) + (c.Pt * tangentY);
 
                 body1.velocity.x -= (body1.invMass * pX);
                 body1.velocity.y -= (body1.invMass * pY);
@@ -171,15 +171,15 @@ export default class Arbiter
 
     applyImpulse ()
     {
-        let contacts = this.contacts;
-        let numContacts = this.numContacts;
-        let body1 = this.body1;
-        let body2 = this.body2;
-        let accumulateImpulses = this.world.accumulateImpulses;
+        let contacts: Contact[] = this.contacts;
+        let numContacts: number = this.numContacts;
+        let body1: Body = this.body1;
+        let body2: Body = this.body2;
+        let accumulateImpulses: boolean = this.world.accumulateImpulses;
 
         for (let i: number = 0; i < numContacts; i++)
         {
-            let c = contacts[i];
+            let c: Contact = contacts[i];
 
             c.r1X = c.positionX - body1.position.x;
             c.r1Y = c.positionY - body1.position.y;
@@ -187,17 +187,17 @@ export default class Arbiter
             c.r2X = c.positionX - body2.position.x;
             c.r2Y = c.positionY - body2.position.y;
 
-            let subX = (body2.velocity.x + (-body2.angularVelocity * c.r2Y)) - body1.velocity.x;
-            let subY = (body2.velocity.y + (body2.angularVelocity * c.r2X)) - body1.velocity.y;
+            let subX: number = (body2.velocity.x + (-body2.angularVelocity * c.r2Y)) - body1.velocity.x;
+            let subY: number = (body2.velocity.y + (body2.angularVelocity * c.r2X)) - body1.velocity.y;
 
-            let dVx = subX - (-body1.angularVelocity * c.r1Y);
-            let dVy = subY - (body1.angularVelocity * c.r1X);
+            let dVx: number = subX - (-body1.angularVelocity * c.r1Y);
+            let dVy: number = subY - (body1.angularVelocity * c.r1X);
             
             //  Compute normal impulse
 
-            let vn = Vec2.dotXY(dVx, dVy, c.normalX, c.normalY);
+            let vn: number = Vec2.dotXY(dVx, dVy, c.normalX, c.normalY);
 
-            let dPn = c.massNormal * (-vn + c.bias);
+            let dPn: number = c.massNormal * (-vn + c.bias);
 
             if (accumulateImpulses)
             {
@@ -213,8 +213,8 @@ export default class Arbiter
 
             //  Apply contact impulse
 
-            let PnX = dPn * c.normalX;
-            let PnY = dPn * c.normalY;
+            let PnX: number = dPn * c.normalX;
+            let PnY: number = dPn * c.normalY;
 
             body1.velocity.x -= (body1.invMass * PnX);
             body1.velocity.y -= (body1.invMass * PnY);
@@ -226,8 +226,8 @@ export default class Arbiter
 
             //  Relative velocity at contact
 
-            let tangentX = c.normalY;
-            let tangentY = -1 * c.normalX;
+            let tangentX: number = c.normalY;
+            let tangentY: number = -1 * c.normalX;
 
             let vt = Vec2.dotXY(dVx, dVy, tangentX, tangentY);
 
