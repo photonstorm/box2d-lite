@@ -258,7 +258,30 @@ A `World.allowedPenetration` property has been added. This is the slop value, th
 
 Also added the ability to disable each part of the render process (bodies, contacts and joints).
 
-The issue now is one of performance. With 100 bodies everything is 60fps and happy as larry. With 300 bodies it _really_ struggles. So, the next task is to try some basic support for broadphase and see what happens. If it still doesn't make much difference, I'll knock this project on the head as a fun experiment, and move on.
+The issue now is one of performance. With 100 bodies everything is 60fps and happy as larry. With 300 bodies it _really_ struggles. So, the next task is to try some basic support for broadphase and see what happens. If it still doesn't make much difference, I'll knock this project on the head as a fun experiment, and move on. To be fair, Erin does state in his PDF: "WARNING: Box2D Lite uses a horribly slow O(N^2) broadphase. Use an AABB tree, grid, etc. to speed up a real engine", so that's exactly what we'll do.
 
 ## v0.5.0
+
+Added `Body.preStep` and `Body.postStep` methods, to remove the logic from the World.step and prepare for broadphase.
+
+We've a few choices when it comes to the broadphase. At the moment, Box2D Lite will literally check every body against every other body and run a collision test against each pair. This is expensive even if the test returns empty, because it still creates an Arbiter class in order to run the test, and the test itself uses a lot of mat22 math.
+
+With our volume of bodies, the performance issue right now isn't that the test is O(N^2), it's the creation of the Arbiters.
+
+In the new test there are 3 wall bodies (left, right and bottom) and then I spawn in a whole bunch of bodies from the top, letting gravity pull them down.
+
+With 10 bodies we're creating 75 arbiters per frame.
+With 100 bodies it's 5250.
+With 200 bodies it's 20,500.
+With 500 bodies it's 126,250 (and the test runs at something like 1 frame every 3 seconds!)
+
+So, definitely won't scale. We need to eliminate pointless Arbiter creation.
+
+One way we could do this is for a Body to keep an AABB and then do a simple AABB-AABB check first. Only if that hits, do we proceed. 
+
+The downside is that we need to calculate the AABB each step. Easy, if the Body has fixed rotation, otherwise it's a set of min/max tests. Thinking about it, we need the AABB anyway, even if we use a spatial grid / K-Tree in the future. Before I do this, I'm going to replace the `Body.width` vec2 to be something more sensible.
+
+## v0.6.0
+
+The Body class now has `width` and `height` properties. This makes for a better API anyway, oh and it reduces the amount of vec2s created during start-up by 1 per Body instance!
 
