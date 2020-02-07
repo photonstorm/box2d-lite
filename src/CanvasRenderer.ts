@@ -10,6 +10,10 @@ export default class CanvasRenderer
     canvas: HTMLCanvasElement;
     context: CanvasRenderingContext2D;
 
+    showBodies: boolean = true;
+    showContacts: boolean = true;
+    showJoints: boolean = true;
+
     private _M0: Mat22;
     private _M1: Mat22;
 
@@ -44,24 +48,33 @@ export default class CanvasRenderer
 
         context.clearRect(0, 0, this.canvas.width, this.canvas.height);
   
-        for (let i = 0; i < bodies.length; i++)
+        if (this.showBodies)
         {
-            this.renderBody(bodies[i], context);
+            for (let i = 0; i < bodies.length; i++)
+            {
+                this.renderBody(bodies[i], context);
+            }
         }
         
-        for (let i = 0; i < arbiters.length; i++)
+        if (this.showContacts)
         {
-            let arbiter = arbiters[i].second;
-
-            for (let c = 0; c < arbiter.contacts.length; c++)
+            for (let i = 0; i < arbiters.length; i++)
             {
-                this.renderContact(arbiter.contacts[c], context);
+                let arbiter = arbiters[i].second;
+    
+                for (let c = 0; c < arbiter.contacts.length; c++)
+                {
+                    this.renderContact(arbiter.contacts[c], context);
+                }
             }
         }
 
-        for (let i = 0; i < joints.length; i++)
+        if (this.showJoints)
         {
-            this.renderJoint(joints[i], context);
+            for (let i = 0; i < joints.length; i++)
+            {
+                this.renderJoint(joints[i], context);
+            }
         }
     }
 
