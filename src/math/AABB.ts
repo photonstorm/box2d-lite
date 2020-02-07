@@ -4,6 +4,10 @@ export default class AABB
 {
     body: Body;
 
+    // center
+    x: number = 0;
+    y: number = 0;
+
     // top-left
     x1: number = 0;
     y1: number = 0;
@@ -31,12 +35,15 @@ export default class AABB
     {
         const body = this.body;
 
+        this.x = body.position.x;
+        this.y = body.position.y;
+
         if (body.rotation === this.prevAngle)
         {
-            this.x1 = body.position.x - (this.width * 0.5);
-            this.x2 = body.position.x + (this.width * 0.5);
-            this.y1 = body.position.y - (this.height * 0.5);
-            this.y2 = body.position.y + (this.height * 0.5);
+            this.x1 = this.x - (this.width * 0.5);
+            this.x2 = this.x + (this.width * 0.5);
+            this.y1 = this.y - (this.height * 0.5);
+            this.y2 = this.y + (this.height * 0.5);
         }
         else
         {
@@ -59,10 +66,10 @@ export default class AABB
             const ex: number = Math.max(Math.abs(x1x), Math.abs(x2x));
             const ey: number = Math.max(Math.abs(x1y), Math.abs(x2y));
 
-            this.x1 = body.position.x - ex;
-            this.x2 = body.position.x + ex;
-            this.y1 = body.position.y - ey;
-            this.y2 = body.position.y + ey;
+            this.x1 = this.x - ex;
+            this.x2 = this.x + ex;
+            this.y1 = this.y - ey;
+            this.y2 = this.y + ey;
 
             this.width = this.x2 - this.x1;
             this.height = this.y2 - this.y1;
@@ -71,6 +78,11 @@ export default class AABB
         }
     }
 
+    isPoint (): boolean
+    {
+        return (this.width === 0 && this.height === 0);
+    }
+    
     intersects (bounds: AABB): boolean
     {
         return !(
