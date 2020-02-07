@@ -1,3 +1,62 @@
+class AABB {
+    constructor(body) {
+        // top-left
+        this.x1 = 0;
+        this.y1 = 0;
+        //  bottom-right
+        this.x2 = 0;
+        this.y2 = 0;
+        //  width / height
+        this.width = 0;
+        this.height = 0;
+        this.body = body;
+        this.prevAngle = Number.MIN_VALUE;
+        this.update();
+    }
+    update() {
+        const body = this.body;
+        if (body.rotation === this.prevAngle) {
+            this.x1 = body.position.x - (this.width * 0.5);
+            this.x2 = body.position.x + (this.width * 0.5);
+            this.y1 = body.position.y - (this.height * 0.5);
+            this.y2 = body.position.y + (this.height * 0.5);
+        }
+        else {
+            //  The top-right and bottom-right corners (unrotated)
+            const c1x = body.width * 0.5;
+            const c2x = body.width * 0.5;
+            const c1y = -body.height * 0.5;
+            const c2y = body.height * 0.5;
+            const sin = Math.sin(body.rotation);
+            const cos = Math.cos(body.rotation);
+            //  Transformed corners
+            const x1x = c1x * cos - c1y * sin;
+            const x1y = c1x * sin + c1y * cos;
+            const x2x = c2x * cos - c2y * sin;
+            const x2y = c2x * sin + c2y * cos;
+            //  Extents
+            const ex = Math.max(Math.abs(x1x), Math.abs(x2x));
+            const ey = Math.max(Math.abs(x1y), Math.abs(x2y));
+            this.x1 = body.position.x - ex;
+            this.x2 = body.position.x + ex;
+            this.y1 = body.position.y - ey;
+            this.y2 = body.position.y + ey;
+            this.width = this.x2 - this.x1;
+            this.height = this.y2 - this.y1;
+            this.prevAngle = body.rotation;
+        }
+    }
+    intersects(bounds) {
+        return !(bounds.x1 > this.x2 ||
+            bounds.x2 < this.x1 ||
+            bounds.y1 > this.y2 ||
+            bounds.y2 < this.y1);
+    }
+    destroy() {
+        this.body = null;
+    }
+}
+
 /**
  * Copyright (c) 2006-2007 Erin Catto http://www.gphysics.com
  *
@@ -101,14 +160,13 @@ class Vec2 {
  * Ported to TypeScript by Richard Davey, 2020.
  */
 class Body {
-    constructor(width, mass) {
+    constructor(width, height, mass) {
         this.position = new Vec2();
         this.rotation = 0;
         this.velocity = new Vec2();
         this.angularVelocity = 0;
         this.force = new Vec2();
         this.torque = 0;
-        this.width = new Vec2();
         this.friction = 0.2;
         this.mass = Number.MAX_VALUE;
         this.invMass = 0;
@@ -116,14 +174,16 @@ class Body {
         this.invI = 0;
         this.fixedRotation = false;
         this.id = 0;
-        this.set(width, mass);
+        this.bounds = new AABB(this);
+        this.set(width, height, mass);
     }
-    set(width, mass) {
+    set(width, height, mass) {
         this.width = width;
+        this.height = height;
         this.mass = mass;
         if (mass < Number.MAX_VALUE) {
             this.invMass = 1 / mass;
-            this.I = mass * (width.x * width.x + width.y * width.y) / 12;
+            this.I = mass * (width * width + height * height) / 12;
             this.invI = 1 / this.I;
         }
         else {
@@ -131,11 +191,31 @@ class Body {
             this.I = Number.MAX_VALUE;
             this.invI = 0;
         }
+        this.bounds.update();
         return this;
     }
     addForce(force) {
         this.force.add(force);
         return this;
+    }
+    preStep(delta, gravity) {
+        if (this.invMass !== 0) {
+            this.velocity.x += delta * (gravity.x + (this.invMass * this.force.x));
+            this.velocity.y += delta * (gravity.y + (this.invMass * this.force.y));
+            if (!this.fixedRotation) {
+                this.angularVelocity += delta * this.invI * this.torque;
+            }
+        }
+    }
+    postStep(delta) {
+        this.position.x += delta * this.velocity.x;
+        this.position.y += delta * this.velocity.y;
+        if (!this.fixedRotation) {
+            this.rotation += delta * this.angularVelocity;
+        }
+        this.force.set(0, 0);
+        this.torque = 0;
+        this.bounds.update();
     }
 }
 
@@ -259,6 +339,10 @@ class Mat22 {
 
 class CanvasRenderer {
     constructor(canvas) {
+        this.showBodies = true;
+        this.showBounds = true;
+        this.showContacts = true;
+        this.showJoints = true;
         this.canvas = canvas;
         this.context = canvas.getContext('2d');
         this._M0 = new Mat22();
@@ -275,24 +359,42 @@ class CanvasRenderer {
         const joints = world.joints;
         const arbiters = world.arbiters;
         context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        for (let i = 0; i < bodies.length; i++) {
-            this.renderBody(bodies[i], context);
-        }
-        for (let i = 0; i < arbiters.length; i++) {
-            let arbiter = arbiters[i].second;
-            for (let c = 0; c < arbiter.contacts.length; c++) {
-                this.renderContact(arbiter.contacts[c], context);
+        if (this.showBodies) {
+            for (let i = 0; i < bodies.length; i++) {
+                this.renderBody(bodies[i], context);
             }
         }
-        for (let i = 0; i < joints.length; i++) {
-            this.renderJoint(joints[i], context);
+        if (this.showBounds) {
+            for (let i = 0; i < bodies.length; i++) {
+                this.renderBodyBounds(bodies[i], context);
+            }
         }
+        if (this.showContacts) {
+            for (let i = 0; i < arbiters.length; i++) {
+                let arbiter = arbiters[i].second;
+                for (let c = 0; c < arbiter.contacts.length; c++) {
+                    this.renderContact(arbiter.contacts[c], context);
+                }
+            }
+        }
+        if (this.showJoints) {
+            for (let i = 0; i < joints.length; i++) {
+                this.renderJoint(joints[i], context);
+            }
+        }
+    }
+    renderBodyBounds(body, ctx) {
+        ctx.strokeStyle = 'grey';
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.rect(body.bounds.x1, body.bounds.y1, body.bounds.width, body.bounds.height);
+        ctx.stroke();
     }
     renderBody(body, ctx) {
         this._M0.set(body.rotation);
         let position = body.position;
-        let hX = 0.5 * body.width.x;
-        let hY = 0.5 * body.width.y;
+        let hX = 0.5 * body.width;
+        let hY = 0.5 * body.height;
         const v1 = this._v1;
         const v2 = this._v2;
         const v3 = this._v3;
@@ -763,9 +865,9 @@ let faceB2 = new Vec2();
 function Collide(contacts, bodyA, bodyB) {
     // Setup
     //  half the width of bodyA
-    hA.set(0.5 * bodyA.width.x, 0.5 * bodyA.width.y);
+    hA.set(0.5 * bodyA.width, 0.5 * bodyA.height);
     //  half the width of bodyB
-    hB.set(0.5 * bodyB.width.x, 0.5 * bodyB.width.y);
+    hB.set(0.5 * bodyB.width, 0.5 * bodyB.height);
     let posA = bodyA.position;
     let posB = bodyB.position;
     RotA.set(bodyA.rotation);
@@ -952,11 +1054,10 @@ class Arbiter {
         this.numContacts = numNewContacts;
     }
     preStep(inverseDelta) {
-        //  slop
-        const allowedPenetration = 0.01;
+        const allowedPenetration = this.world.allowedPenetration;
         let contacts = this.contacts;
         let numContacts = this.numContacts;
-        let biasFactor = (this.world.positionCorrection) ? 0.2 : 0;
+        let biasFactor = this.world.positionCorrection;
         let body1 = this.body1;
         let body2 = this.body2;
         let accumulateImpulses = this.world.accumulateImpulses;
@@ -986,10 +1087,14 @@ class Arbiter {
                 let pY = (c.Pn * c.normalY) + (c.Pt * tangentY);
                 body1.velocity.x -= (body1.invMass * pX);
                 body1.velocity.y -= (body1.invMass * pY);
-                body1.angularVelocity -= body1.invI * (r1X * pY - r1Y * pX);
+                if (!body1.fixedRotation) {
+                    body1.angularVelocity -= body1.invI * (r1X * pY - r1Y * pX);
+                }
                 body2.velocity.x += (body2.invMass * pX);
                 body2.velocity.y += (body2.invMass * pY);
-                body2.angularVelocity += body2.invI * (r2X * pY - r2Y * pX);
+                if (!body2.fixedRotation) {
+                    body2.angularVelocity += body2.invI * (r2X * pY - r2Y * pX);
+                }
             }
         }
     }
@@ -1026,10 +1131,14 @@ class Arbiter {
             let PnY = dPn * c.normalY;
             body1.velocity.x -= (body1.invMass * PnX);
             body1.velocity.y -= (body1.invMass * PnY);
-            body1.angularVelocity -= body1.invI * Vec2.crossXY(c.r1X, c.r1Y, PnX, PnY);
+            if (!body1.fixedRotation) {
+                body1.angularVelocity -= body1.invI * Vec2.crossXY(c.r1X, c.r1Y, PnX, PnY);
+            }
             body2.velocity.x += (body2.invMass * PnX);
             body2.velocity.y += (body2.invMass * PnY);
-            body2.angularVelocity += body2.invI * Vec2.crossXY(c.r2X, c.r2Y, PnX, PnY);
+            if (!body2.fixedRotation) {
+                body2.angularVelocity += body2.invI * Vec2.crossXY(c.r2X, c.r2Y, PnX, PnY);
+            }
             //  Relative velocity at contact
             let tangentX = c.normalY;
             let tangentY = -1 * c.normalX;
@@ -1052,10 +1161,14 @@ class Arbiter {
             PnY = dPt * tangentY;
             body1.velocity.x -= (body1.invMass * PnX);
             body1.velocity.y -= (body1.invMass * PnY);
-            body1.angularVelocity -= body1.invI * Vec2.crossXY(c.r1X, c.r1Y, PnX, PnY);
+            if (!body1.fixedRotation) {
+                body1.angularVelocity -= body1.invI * Vec2.crossXY(c.r1X, c.r1Y, PnX, PnY);
+            }
             body2.velocity.x += (body2.invMass * PnX);
             body2.velocity.y += (body2.invMass * PnY);
-            body2.angularVelocity += body2.invI * Vec2.crossXY(c.r2X, c.r2X, PnX, PnY);
+            if (!body2.fixedRotation) {
+                body2.angularVelocity += body2.invI * Vec2.crossXY(c.r2X, c.r2X, PnX, PnY);
+            }
         }
     }
 }
@@ -1121,7 +1234,8 @@ class World {
         this.iterations = 10;
         this.accumulateImpulses = true;
         this.warmStarting = true;
-        this.positionCorrection = true;
+        this.positionCorrection = 0.2;
+        this.allowedPenetration = 0.01; // slop
         this.gravity.x = gravity.x;
         this.gravity.y = gravity.y;
         this.iterations = iterations;
@@ -1142,10 +1256,49 @@ class World {
         this.arbiters = [];
         return this;
     }
-    /**
-     * Determine overlapping bodies and update contact points
-     */
     broadPhase() {
+        window['arbitersTotal'] = 0;
+        let bodies = this.bodies;
+        let length = bodies.length;
+        let arbiters = this.arbiters;
+        for (let i = 0; i < length - 1; i++) {
+            let bodyA = bodies[i];
+            for (let j = i + 1; j < length; j++) {
+                let bodyB = bodies[j];
+                if (bodyA.invMass === 0 && bodyB.invMass === 0 || !bodyA.bounds.intersects(bodyB.bounds)) {
+                    continue;
+                }
+                let arbiter = new Arbiter(this, bodyA, bodyB);
+                let arbiterKey = new ArbiterKey(bodyA, bodyB);
+                window['arbitersTotal']++;
+                let iter = -1;
+                for (let a = 0; a < arbiters.length; a++) {
+                    if (arbiters[a].first.value === arbiterKey.value) {
+                        iter = a;
+                        break;
+                    }
+                }
+                if (arbiter.numContacts > 0) {
+                    if (iter === -1) {
+                        arbiters.push(new ArbiterPair(arbiterKey, arbiter));
+                    }
+                    else {
+                        arbiters[iter].second.update(arbiter.contacts, arbiter.numContacts);
+                    }
+                }
+                else if (arbiter.numContacts === 0 && iter > -1) {
+                    //  Nuke empty arbiter with no contacts
+                    arbiters.splice(iter, 1);
+                }
+            }
+        }
+    }
+    /**
+     * Determine overlapping bodies and update contact points.
+     * WARNING: Horribly slow O(N^2)
+     */
+    OLDbroadPhase() {
+        window['arbitersTotal'] = 0;
         let bodies = this.bodies;
         let length = bodies.length;
         let arbiters = this.arbiters;
@@ -1158,6 +1311,7 @@ class World {
                 }
                 let arbiter = new Arbiter(this, bodyA, bodyB);
                 let arbiterKey = new ArbiterKey(bodyA, bodyB);
+                window['arbitersTotal']++;
                 let iter = -1;
                 for (let a = 0; a < arbiters.length; a++) {
                     if (arbiters[a].first.value === arbiterKey.value) {
@@ -1187,15 +1341,7 @@ class World {
         const bodies = this.bodies;
         const gravity = this.gravity;
         for (let i = 0; i < bodies.length; i++) {
-            let body = bodies[i];
-            if (body.invMass === 0) {
-                continue;
-            }
-            body.velocity.x += delta * (gravity.x + (body.invMass * body.force.x));
-            body.velocity.y += delta * (gravity.y + (body.invMass * body.force.y));
-            if (!body.fixedRotation) {
-                body.angularVelocity += delta * body.invI * body.torque;
-            }
+            bodies[i].preStep(delta, gravity);
         }
         //  Pre-steps
         const arbiters = this.arbiters;
@@ -1219,38 +1365,39 @@ class World {
         }
         //  Integrate velocities
         for (let i = 0; i < bodies.length; i++) {
-            let body = bodies[i];
-            body.position.x += delta * body.velocity.x;
-            body.position.y += delta * body.velocity.y;
-            if (!body.fixedRotation) {
-                body.rotation += delta * body.angularVelocity;
-            }
-            body.force.set(0, 0);
-            body.torque = 0;
+            bodies[i].postStep(delta);
         }
     }
 }
 
 let delta = 1 / 30;
-let world = new World(new Vec2(0, 40), 10);
-// let world = new World();
-let floor = new Body(new Vec2(800, 64), Number.MAX_VALUE);
-floor.position.set(400, 600 - 32);
+// let world = new World(new Vec2(0, 40), 10);
+let world = new World();
+//  helps reduce stack jiggle
+// world.positionCorrection = 0.1;
+// world.allowedPenetration = 0;
+// world.warmStarting = false;
+// world.accumulateImpulses = false;
+let floor = new Body(800, 64, Number.MAX_VALUE);
+floor.position.set(400, 600 + 32);
 floor.friction = 0;
 world.addBody(floor);
-let leftWall = new Body(new Vec2(64, 600), Number.MAX_VALUE);
-leftWall.position.set(-32, 300);
+let leftWall = new Body(64, 1200, Number.MAX_VALUE);
+leftWall.position.set(-32, 600);
 leftWall.friction = 0;
 world.addBody(leftWall);
-let rightWall = new Body(new Vec2(64, 600), Number.MAX_VALUE);
-rightWall.position.set(832, 300);
+let rightWall = new Body(64, 1200, Number.MAX_VALUE);
+rightWall.position.set(832, 600);
 rightWall.friction = 0;
 world.addBody(rightWall);
-for (let i = 0; i < 16; i++) {
-    let box = new Body(new Vec2(32, 32), 1);
-    box.position.set(400, 520 - (i * 40));
+//  Mass box test
+for (let i = 0; i < 500; i++) {
+    let box = new Body(8 + Math.random() * 32, 8 + Math.random() * 32, 10);
+    box.rotation = Math.random() * Math.PI;
+    box.position.set(100 + Math.random() * 500, -1600 + Math.random() * 1600);
+    // box.position.set(400 - Math.random() * 100, 520 - (i * 40));
     // box.friction = 0;
-    box.fixedRotation = true;
+    // box.fixedRotation = true;
     world.addBody(box);
 }
 //  Stack of boxes
@@ -1267,6 +1414,8 @@ for (let i = 0; i < 16; i++)
 }
 */
 let renderer = new CanvasRenderer(document.getElementById('demo'));
+renderer.showContacts = false;
+// renderer.showBounds = false;
 let pause = false;
 let frame = 0;
 let frameText = document.getElementById('frame');
@@ -1275,13 +1424,15 @@ let arbitersText = document.getElementById('arbiters');
 document.getElementById('pause').addEventListener('click', () => {
     pause = (pause) ? false : true;
 });
+window['arbitersTotal'] = 0;
 function loop() {
     if (!pause) {
         world.step(delta);
         renderer.render(world);
         frameText.value = frame.toString();
         bodiesText.value = world.bodies.length.toString();
-        arbitersText.value = world.arbiters.length.toString();
+        // arbitersText.value = world.arbiters.length.toString();
+        arbitersText.value = window['arbitersTotal'].toString();
         frame++;
     }
     requestAnimationFrame(loop);
