@@ -4,6 +4,7 @@ import ArbiterPair from './ArbiterPair';
 import Body from './Body';
 import Vec2 from './math/Vec2';
 import Joint from './Joint';
+import Quad from './Quad';
 
 /**
  * Copyright (c) 2006-2007 Erin Catto http://www.gphysics.com
@@ -21,15 +22,25 @@ import Joint from './Joint';
 export default class World
 {
     bodyIdSeed: number = 0;
+
     bodies: Body[] = [];
     joints: Joint[] = [];
     arbiters: ArbiterPair[] = [];
+    arbiterKeys = {};
+
     gravity: Vec2 = new Vec2();
-    iterations: number = 10;
+
     accumulateImpulses: boolean = true;
     warmStarting: boolean = true;
+    
+    iterations: number = 10;
     positionCorrection: number = 0.2;
     allowedPenetration: number = 0.01; // slop
+
+    width: number = 2048;
+    height: number = 2048;
+
+    quadTree: Quad;
 
     constructor (gravity: Vec2 = new Vec2(0, 9.807), iterations: number = 10)
     {
@@ -37,6 +48,8 @@ export default class World
         this.gravity.y = gravity.y;
 
         this.iterations = iterations;
+
+        this.quadTree = new Quad(0, 0, 2048, 2048);
     }
 
     addBody (body: Body): World
@@ -66,23 +79,36 @@ export default class World
         return this;
     }
 
-    broadPhase ()
+    QUADbroadPhase ()
     {
         window['arbitersTotal'] = 0;
 
-        let bodies = this.bodies;
-        let length = bodies.length;
-        let arbiters = this.arbiters;
+        const quad = this.quadTree;
 
-        for (let i: number = 0; i < length - 1; i++)
+        quad.clear();
+
+        const bodies = this.bodies;
+        const length = bodies.length;
+        const arbiters = this.arbiters;
+
+        //  Seed the quadtree
+
+        for (let i: number = 0; i < length; i++)
+        {
+            quad.add(bodies[i].bounds);
+        }
+
+        for (let i: number = 0; i < length; i++)
         {
             let bodyA: Body = bodies[i];
 
-            for (let j: number = i + 1; j < length; j++)
-            {
-                let bodyB: Body = bodies[j];
+            let results = quad.getIntersections(bodyA.bounds);
 
-                if (bodyA.invMass === 0 && bodyB.invMass === 0 || !bodyA.bounds.intersects(bodyB.bounds))
+            for (let j: number = 0; j < results.length; j++)
+            {
+                let bodyB: Body = results[j].body;
+
+                if (bodyA.id === bodyB.id || (bodyA.invMass === 0 && bodyB.invMass === 0))
                 {
                     continue;
                 }
@@ -118,6 +144,82 @@ export default class World
                 {
                     //  Nuke empty arbiter with no contacts
                     arbiters.splice(iter, 1);
+                }
+            }
+        }
+    }
+
+    AABBbroadPhase ()
+    {
+        window['arbitersTotal'] = 0;
+
+        let bodies = this.bodies;
+        let length = bodies.length;
+        let arbiters = this.arbiters;
+
+        for (let i: number = 0; i < length - 1; i++)
+        {
+            let bodyA: Body = bodies[i];
+
+            for (let j: number = i + 1; j < length; j++)
+            {
+                let bodyB: Body = bodies[j];
+
+                let key: string = bodyA.id + ':' + bodyB.id;
+
+                if (bodyA.invMass === 0 && bodyB.invMass === 0 || !bodyA.bounds.intersects(bodyB.bounds))
+                {
+                    //  They no longer intersect, but they _may_ have before, so we need to clean the arbiter up
+                    if (this.arbiterKeys[key])
+                    {
+                        let idx = arbiters.indexOf(this.arbiterKeys[key]);
+
+                        if (idx !== -1)
+                        {
+                            arbiters.splice(idx, 1);
+                        }
+
+                        delete this.arbiterKeys[key];
+                    }
+
+                    continue;
+                }
+
+                let arbiter = new Arbiter(this, bodyA, bodyB);
+                let arbiterKey = new ArbiterKey(bodyA, bodyB, key);
+
+                window['arbitersTotal']++;
+
+                let iter = -1;
+
+                for (let a: number = 0; a < arbiters.length; a++)
+                {
+                    if (arbiters[a].first.value === key)
+                    {
+                        iter = a;
+                        break;
+                    }
+                }
+
+                if (arbiter.numContacts > 0)
+                {
+                    if (iter === -1)
+                    {
+                        arbiters.push(new ArbiterPair(arbiterKey, arbiter));
+
+                        this.arbiterKeys[key] = arbiter;
+                    }
+                    else
+                    {
+                        arbiters[iter].second.update(arbiter.contacts, arbiter.numContacts);
+                    }
+                }
+                else if (arbiter.numContacts === 0 && iter > -1)
+                {
+                    //  Nuke empty arbiter with no contacts
+                    arbiters.splice(iter, 1);
+
+                    delete this.arbiterKeys[key];
                 }
             }
         }
@@ -157,6 +259,7 @@ export default class World
 
                 for (let a: number = 0; a < arbiters.length; a++)
                 {
+                    //  We have an arbiter for this body pair already, store the array index in `iter`
                     if (arbiters[a].first.value === arbiterKey.value)
                     {
                         iter = a;
@@ -164,20 +267,23 @@ export default class World
                     }
                 }
 
+                //  if in contact (passed AABB check and clip check)
                 if (arbiter.numContacts > 0)
                 {
                     if (iter === -1)
                     {
+                        //  new arbiter, create a Pair and shove into the array
                         arbiters.push(new ArbiterPair(arbiterKey, arbiter));
                     }
                     else
                     {
+                        //  Already in the array, so update the Arbiter instance, passing in the new contacts
                         arbiters[iter].second.update(arbiter.contacts, arbiter.numContacts);
                     }
                 }
                 else if (arbiter.numContacts === 0 && iter > -1)
                 {
-                    //  Nuke empty arbiter with no contacts
+                    //  Nuke empty Arbiter Pair, as the two bodies no longer have any contact
                     arbiters.splice(iter, 1);
                 }
             }
@@ -186,9 +292,14 @@ export default class World
 
     step (delta: number)
     {
+        const arbiters = this.arbiters;
+        const joints = this.joints;
+
         let inverseDelta = (delta > 0) ? 1 / delta : 0;
 
-        this.broadPhase();
+        this.OLDbroadPhase();
+        // this.AABBbroadPhase();
+        // this.QUADbroadPhase();
 
         //  Integrate forces
 
@@ -201,9 +312,6 @@ export default class World
         }
 
         //  Pre-steps
-
-        const arbiters = this.arbiters;
-        const joints = this.joints;
 
         for (let i: number = 0; i < arbiters.length; i++)
         {
