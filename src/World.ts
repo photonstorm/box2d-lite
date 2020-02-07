@@ -144,7 +144,10 @@ export default class World
             body.velocity.x += delta * (gravity.x + (body.invMass * body.force.x));
             body.velocity.y += delta * (gravity.y + (body.invMass * body.force.y));
 
-            body.angularVelocity += delta * body.invI * body.torque;
+            if (!body.fixedRotation)
+            {
+                body.angularVelocity += delta * body.invI * body.torque;
+            }
         }
 
         //  Pre-steps
@@ -188,7 +191,10 @@ export default class World
             body.position.x += delta * body.velocity.x;
             body.position.y += delta * body.velocity.y;
 
-            body.rotation += delta * body.angularVelocity;
+            if (!body.fixedRotation)
+            {
+                body.rotation += delta * body.angularVelocity;
+            }
 
             body.force.set(0, 0);
             body.torque = 0;

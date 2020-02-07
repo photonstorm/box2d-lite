@@ -32,6 +32,8 @@ export default class Body
     I: number = Number.MAX_VALUE;
     invI: number = 0;
 
+    fixedRotation: boolean = false;
+
     id: number = 0;
 
     constructor (width: Vec2, mass: number)
