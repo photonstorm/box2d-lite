@@ -59,6 +59,31 @@ export default class Mat22
         return this;
     }
 
+    mulMM (mA: Mat22, mB: Mat22): Mat22
+    {
+        this.a = mA.a * mB.a + mA.c * mB.c;
+        this.c = mA.b * mB.a + mA.d * mB.c;
+
+        this.b = mA.a * mB.b + mA.c * mB.d;
+        this.d = mA.b * mB.b + mA.d * mB.d;
+
+        return this;
+    }
+
+    transpose (v: number): Mat22
+    {
+        const c = Math.cos(v);
+        const s = Math.sin(v);
+
+        this.a = c;
+        this.c = -s;
+        
+        this.b = s;
+        this.d = c;
+
+        return this;
+    }
+
     static add (mA: Mat22, mB: Mat22): Mat22
     {
         return new Mat22(
@@ -75,6 +100,16 @@ export default class Mat22
             m.a * v.x + m.b * v.y,
             m.c * v.x + m.d * v.y
         );
+    }
+
+    static mulMVV (m: Mat22, v: Vec2, out: Vec2): Vec2
+    {
+        out.set(
+            m.a * v.x + m.b * v.y,
+            m.c * v.x + m.d * v.y
+        );
+
+        return out;
     }
 
     static mulMM (mA: Mat22, mB: Mat22): Mat22
@@ -98,6 +133,16 @@ export default class Mat22
         );
     }
 
+    static absM (m: Mat22, out: Mat22): Mat22
+    {
+        out.a = Math.abs(m.a);
+        out.c = Math.abs(m.c);
+        out.b = Math.abs(m.b);
+        out.d = Math.abs(m.d);
+
+        return out;
+    }
+
     static transpose (m: Mat22): Mat22
     {
         return new Mat22(
@@ -108,6 +153,16 @@ export default class Mat22
         );
     }
       
+    static transposeM (m: Mat22, out: Mat22): Mat22
+    {
+        out.a = m.a;
+        out.c = m.b;
+        out.b = m.c;
+        out.d = m.d;
+
+        return out;
+    }
+
     static invert (m: Mat22): Mat22
     {
         const a: number = m.a;
