@@ -326,3 +326,7 @@ It works well but it has two down-sides: First, you need to sort the bodies arra
 
 The alternative is a QuadTree, or similar data structure such as an R-Tree.
 
+Spent some time building in a QuadTree class and improving Arbiter collide calls. However, noticed a bug in the AABB Broadphase implementation that will require further investigation soon - as it causes bodies to slide up walls as arbiters are still running, when they should be dead.
+
+Will also see about stopping the creation of Arbiters and the passing in of new contacts.
+
