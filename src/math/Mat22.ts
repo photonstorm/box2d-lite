@@ -48,6 +48,17 @@ export default class Mat22
         return this;
     }
 
+    setValues (a: number, c: number, b: number, d: number)
+    {
+        this.a = a;
+        this.c = c;
+
+        this.b = b;
+        this.d = d;
+
+        return this;
+    }
+
     setFromVec2 (vA: Vec2, vB: Vec2)
     {
         this.a = vA.x;
@@ -87,6 +98,16 @@ export default class Mat22
     static add (mA: Mat22, mB: Mat22): Mat22
     {
         return new Mat22(
+            mA.a + mB.a,
+            mA.c + mB.c,
+            mA.b + mB.b,
+            mA.d + mB.d
+        );
+    }
+
+    static addV (mA: Mat22, mB: Mat22, out: Mat22): Mat22
+    {
+        return out.setValues(
             mA.a + mB.a,
             mA.c + mB.c,
             mA.b + mB.b,
@@ -174,6 +195,24 @@ export default class Mat22
         let det: number = 1 / (a * d - b * c);
 
         return new Mat22(
+            det * d,
+            det * -b,
+            det * -c,
+            det * a
+        );
+    }
+
+    static invertV (m: Mat22, out: Mat22): Mat22
+    {
+        const a: number = m.a;
+        const c: number = m.c;
+
+        const b: number = m.b;
+        const d: number = m.d;
+
+        let det: number = 1 / (a * d - b * c);
+
+        return out.setValues(
             det * d,
             det * -b,
             det * -c,
