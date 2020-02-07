@@ -109,7 +109,7 @@ export default class Arbiter
 
         let contacts: Contact[] = this.contacts;
         let numContacts: number = this.numContacts;
-        let biasFactor: number = (this.world.positionCorrection) ? 0.2 : 0;
+        let biasFactor: number = this.world.positionCorrection;
         let body1: Body = this.body1;
         let body2: Body = this.body2;
         let accumulateImpulses: boolean = this.world.accumulateImpulses;

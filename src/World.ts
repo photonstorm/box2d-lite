@@ -28,7 +28,7 @@ export default class World
     iterations: number = 10;
     accumulateImpulses: boolean = true;
     warmStarting: boolean = true;
-    positionCorrection: boolean = true;
+    positionCorrection: number = 0.2;
 
     constructor (gravity: Vec2 = new Vec2(0, 9.807), iterations: number = 10)
     {
