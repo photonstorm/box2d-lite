@@ -19,10 +19,10 @@ export default class ArbiterKey
     bodyB: Body;
     value: string;
 
-    constructor (bodyA: Body, bodyB: Body)
+    constructor (bodyA: Body, bodyB: Body, key?: string)
     {
         this.bodyA = bodyA;
         this.bodyB = bodyB;
-        this.value = bodyA.id + ':' + bodyB.id;
+        this.value = (key)  ? key : bodyA.id + ':' + bodyB.id;
     }
 }
