@@ -515,9 +515,15 @@ class FeaturePair {
  * Ported to TypeScript by Richard Davey, 2020.
  */
 class ClipVertex {
-    constructor() {
-        this.v = new Vec2();
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
         this.fp = new FeaturePair();
+    }
+    set(x, y) {
+        this.x = x;
+        this.y = y;
+        return this;
     }
 }
 
@@ -554,40 +560,40 @@ function ComputeIncidentEdge(c, h, pos, Rot, normalX, normalY) {
     const absX = Math.abs(nX);
     const absY = Math.abs(nY);
     // let nAbs: Vec2 = Vec2.abs(n);
-    const clipVertex0 = new ClipVertex();
-    const clipVertex1 = new ClipVertex();
+    const clipVertex0 = new ClipVertex(0, 0);
+    const clipVertex1 = new ClipVertex(0, 0);
     if (absX > absY) {
         if (Math.sign(nX) > 0) {
-            clipVertex0.v.set(h.x, -h.y);
+            clipVertex0.set(h.x, -h.y);
             clipVertex0.fp.e.inEdge2 = EdgeNumbers.EDGE3;
             clipVertex0.fp.e.outEdge2 = EdgeNumbers.EDGE4;
-            clipVertex1.v.set(h.x, h.y);
+            clipVertex1.set(h.x, h.y);
             clipVertex1.fp.e.inEdge2 = EdgeNumbers.EDGE4;
             clipVertex1.fp.e.outEdge2 = EdgeNumbers.EDGE1;
         }
         else {
-            clipVertex0.v.set(-h.x, h.y);
+            clipVertex0.set(-h.x, h.y);
             clipVertex0.fp.e.inEdge2 = EdgeNumbers.EDGE1;
             clipVertex0.fp.e.outEdge2 = EdgeNumbers.EDGE2;
-            clipVertex1.v.set(-h.x, -h.y);
+            clipVertex1.set(-h.x, -h.y);
             clipVertex1.fp.e.inEdge2 = EdgeNumbers.EDGE2;
             clipVertex1.fp.e.outEdge2 = EdgeNumbers.EDGE3;
         }
     }
     else {
         if (Math.sign(nY) > 0) {
-            clipVertex0.v.set(h.x, h.y);
+            clipVertex0.set(h.x, h.y);
             clipVertex0.fp.e.inEdge2 = EdgeNumbers.EDGE4;
             clipVertex0.fp.e.outEdge2 = EdgeNumbers.EDGE1;
-            clipVertex1.v.set(-h.x, h.y);
+            clipVertex1.set(-h.x, h.y);
             clipVertex1.fp.e.inEdge2 = EdgeNumbers.EDGE1;
             clipVertex1.fp.e.outEdge2 = EdgeNumbers.EDGE2;
         }
         else {
-            clipVertex0.v.set(-h.x, -h.y);
+            clipVertex0.set(-h.x, -h.y);
             clipVertex0.fp.e.inEdge2 = EdgeNumbers.EDGE2;
             clipVertex0.fp.e.outEdge2 = EdgeNumbers.EDGE3;
-            clipVertex1.v.set(h.x, -h.y);
+            clipVertex1.set(h.x, -h.y);
             clipVertex1.fp.e.inEdge2 = EdgeNumbers.EDGE3;
             clipVertex1.fp.e.outEdge2 = EdgeNumbers.EDGE4;
         }
@@ -595,14 +601,14 @@ function ComputeIncidentEdge(c, h, pos, Rot, normalX, normalY) {
     // clipVertex0.v = Vec2.add(pos, Mat22.mulMV(Rot, clipVertex0.v));
     // clipVertex1.v = Vec2.add(pos, Mat22.mulMV(Rot, clipVertex1.v));
     //  inline:
-    const v0 = clipVertex0.v;
-    const v1 = clipVertex1.v;
-    let mx = pos.x + (Rot.a * v0.x + Rot.b * v0.y);
-    let my = pos.y + (Rot.c * v0.x + Rot.d * v0.y);
-    v0.set(mx, my);
-    mx = pos.x + (Rot.a * v1.x + Rot.b * v1.y);
-    my = pos.y + (Rot.c * v1.x + Rot.d * v1.y);
-    v1.set(mx, my);
+    // const v0 = clipVertex0.v;
+    // const v1 = clipVertex1.v;
+    let mx = pos.x + (Rot.a * clipVertex0.x + Rot.b * clipVertex0.y);
+    let my = pos.y + (Rot.c * clipVertex0.x + Rot.d * clipVertex0.y);
+    clipVertex0.set(mx, my);
+    mx = pos.x + (Rot.a * clipVertex1.x + Rot.b * clipVertex1.y);
+    my = pos.y + (Rot.c * clipVertex1.x + Rot.d * clipVertex1.y);
+    clipVertex1.set(mx, my);
     c[0] = clipVertex0;
     c[1] = clipVertex1;
 }
@@ -656,8 +662,10 @@ function ClipSegmentToLine(vOut, vIn, normalX, normalY, offset, clipEdge) {
     //  Start with no output points
     let numOut = 0;
     // Calculate the distance of end points to the line
-    let distance0 = Vec2.dotXYV(normalX, normalY, vIn[0].v) - offset;
-    let distance1 = Vec2.dotXYV(normalX, normalY, vIn[1].v) - offset;
+    // let distance0 = Vec2.dotXYV(normalX, normalY, vIn[0].v) - offset;
+    let distance0 = Vec2.dotXY(normalX, normalY, vIn[0].x, vIn[0].y) - offset;
+    // let distance1 = Vec2.dotXYV(normalX, normalY, vIn[1].v) - offset;
+    let distance1 = Vec2.dotXY(normalX, normalY, vIn[1].x, vIn[1].y) - offset;
     // If the points are behind the plane
     if (distance0 <= 0) {
         vOut[numOut] = vIn[0];
@@ -671,11 +679,7 @@ function ClipSegmentToLine(vOut, vIn, normalX, normalY, offset, clipEdge) {
     if (distance0 * distance1 < 0) {
         // Find intersection point of edge and plane
         let interp = distance0 / (distance0 - distance1);
-        let clip = new ClipVertex();
-        //  This single line creates 3 vec2s into a newly created vec2!
-        // clip.v = Vec2.add(vIn[0].v, Vec2.mulSV(interp, Vec2.sub(vIn[1].v, vIn[0].v)));
-        //  This saves 189 vec2 creations per frame:
-        clip.v.set(vIn[0].v.x + (interp * (vIn[1].v.x - vIn[0].v.x)), vIn[0].v.y + (interp * (vIn[1].v.y - vIn[0].v.y)));
+        let clip = new ClipVertex(vIn[0].x + (interp * (vIn[1].x - vIn[0].x)), vIn[0].y + (interp * (vIn[1].y - vIn[0].y)));
         if (distance0 > 0) {
             clip.fp = vIn[0].fp;
             clip.fp.e.inEdge1 = clipEdge;
@@ -980,9 +984,9 @@ function Collide(contacts, bodyA, bodyB) {
     // Due to roundoff, it is possible that clipping removes all points.
     let numContacts = 0;
     for (let i = 0; i < 2; i++) {
-        let separation = Vec2.dotXYV(frontNormalX, frontNormalY, clipPoints[i].v) - front;
+        let separation = Vec2.dotXY(frontNormalX, frontNormalY, clipPoints[i].x, clipPoints[i].y) - front;
         if (separation <= 0) {
-            contacts[numContacts] = new Contact(separation, normalX, normalY, clipPoints[i].v.x - (separation * frontNormalX), clipPoints[i].v.y - (separation * frontNormalY), clipPoints[i].fp);
+            contacts[numContacts] = new Contact(separation, normalX, normalY, clipPoints[i].x - (separation * frontNormalX), clipPoints[i].y - (separation * frontNormalY), clipPoints[i].fp);
             // contacts[numContacts].separation = separation;
             // contacts[numContacts].normal.set(normalX, normalY);
             // contacts[numContacts].position = new Vec2(

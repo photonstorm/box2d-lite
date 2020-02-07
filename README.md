@@ -155,3 +155,12 @@ Pretty happy with just 8 mat22s in the entire test! We're still creating ~700 ve
 
 ## v0.1.0
 
+It would appear that the final instance creating bastion is the ClipVertex. It only creates one vec2 instance per class, but we can still do away with it perfectly easily, with minimal changes elsewhere. Let's go...
+
+Frame: 200 = 535 vec2s - 8 mat22s
+Frame: 600 = 535 vec2s - 8 mat22s
+
+We've now got the vec2 instance count perfectly stable, regardless of the number of contacts, which is great.
+
+Also, a 38.2217% decrease is pretty good. But, I'm sure we can go further without mangling the code too much.
+
