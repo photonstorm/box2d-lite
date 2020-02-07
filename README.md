@@ -29,7 +29,7 @@ in that one single frame. I.e. used purely for collision math.
 
 Why frames 200 and 600? Because in Frame 200 most of the bodies are in the air, the only contacts are with each other or the pendulum. By Frame 600 they're all resting on the floor, so have lots of contacts.
 
-Here is a the performance monitor flamechart capture of a single frame (frame 200):
+Here is a performance monitor flamechart capture of a single frame (frame 200):
 
 ![image](pages/flamechartv000.png)
 
@@ -236,12 +236,12 @@ To be honest, the Body class could remove 1 (the `width` property), to be swappe
 
 The Joint class has a whole bunch it doesn't really need and it'd be worth investigating further what could be removed.
 
-Here is a the performance monitor flamechart capture of a single frame (frame 200):
+Here is a performance monitor flamechart capture of a single frame (frame 200):
 
 ![image](pages/flamechartv030.png)
 
 Much better! the heap is almost half the size, our frame rate is a solid 60fps and our callstack is equally cleaner:
 
-![image](pages/flamechartv030.png)
+![image](pages/callstackv030.png)
 
 Clearly, the Mat22 transpose method is eating-up a bit, as is the creation of new Contacts, but this is a dramatic improvement over what we started with and leaves us in a good place to move to the next version. After all, a 100% reduction in instance creation is about as good as you can get :)
