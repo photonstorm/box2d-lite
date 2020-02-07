@@ -245,3 +245,12 @@ Much better! the heap is almost half the size, our frame rate is a solid 60fps a
 ![image](pages/callstackv030.png)
 
 Clearly, the Mat22 transpose method is eating-up a bit, as is the creation of new Contacts, but this is a dramatic improvement over what we started with and leaves us in a good place to move to the next version. After all, a 100% reduction in instance creation is about as good as you can get :)
+
+## v0.4.0
+
+Added `Body.fixedRotation` boolean. Allows you to not rotate a body.
+
+Built a body stack test. It highlights that the default friction causes slipping.
+
+`World.positionCorrection` has now changed from a boolean to a float. This removes a ternary in the Arbiter class and just makes more sense anyway.
+
