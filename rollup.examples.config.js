@@ -1,5 +1,5 @@
 import typescript from 'rollup-plugin-typescript2';
-import {terser} from 'rollup-plugin-terser';
+// import {terser} from 'rollup-plugin-terser';
 
 export default {
 
@@ -10,12 +10,12 @@ export default {
             file: './examples/index.js',
             format: 'esm'
         },
-        {
-            file: './examples/index.min.js',
-            format: 'iife',
-            name: 'Box2DLiteTS',
-            plugins: [ terser() ]
-        }
+        // {
+        //     file: './examples/index.min.js',
+        //     format: 'iife',
+        //     name: 'Box2DLiteTS',
+        //     plugins: [ terser() ]
+        // }
     ],
 
     plugins: [
