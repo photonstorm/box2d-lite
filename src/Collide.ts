@@ -193,31 +193,123 @@ function computeFaceBY (posA: Vec2, posB: Vec2, RotA: Mat22, RotB: Mat22, hA: Ve
     return front;
 }
 
+//  Our cached collision vecs and mat22s
+let hA: Vec2 = new Vec2();
+let hB: Vec2 = new Vec2();
+let RotA: Mat22 = new Mat22();
+let RotB: Mat22 = new Mat22();
+let RotAT: Mat22 = new Mat22();
+let RotBT: Mat22 = new Mat22();
+let dp: Vec2 = new Vec2();
+let dA: Vec2 = new Vec2();
+let dB: Vec2 = new Vec2();
+let C: Mat22 = new Mat22();
+let absC: Mat22 = new Mat22();
+let absCT: Mat22 = new Mat22();
+let faceA: Vec2 = new Vec2();
+let faceA1: Vec2 = new Vec2();
+let faceA2: Vec2 = new Vec2();
+let faceB: Vec2 = new Vec2();
+let faceB1: Vec2 = new Vec2();
+let faceB2: Vec2 = new Vec2();
+
 export default function Collide (contacts: Contact[], bodyA: Body, bodyB: Body): number
 {
     // Setup
-    let hA = Vec2.mulSV(0.5, bodyA.width); // half the width of bodyA
-    let hB = Vec2.mulSV(0.5, bodyB.width); // half the width of bodyB
+
+    // static mulSV (s: number, v: Vec2): Vec2
+    // {
+    //     return new Vec2(s * v.x, s * v.y);
+    // }
+
+    // let hA = Vec2.mulSV(0.5, bodyA.width); // half the width of bodyA
+    // let hB = Vec2.mulSV(0.5, bodyB.width); // half the width of bodyB
+
+    //  half the width of bodyA
+    hA.set(
+        0.5 * bodyA.width.x,
+        0.5 * bodyA.width.y
+    );
+
+    //  half the width of bodyB
+    hB.set(
+        0.5 * bodyB.width.x,
+        0.5 * bodyB.width.y
+    );
 
     let posA = bodyA.position;
     let posB = bodyB.position;
 
-    let RotA = new Mat22().set(bodyA.rotation);
-    let RotB = new Mat22().set(bodyB.rotation);
+    // let RotA = new Mat22().set(bodyA.rotation);
+    // let RotB = new Mat22().set(bodyB.rotation);
 
-    let RotAT = Mat22.transpose(RotA);
-    let RotBT = Mat22.transpose(RotB);
+    RotA.set(bodyA.rotation);
+    RotB.set(bodyB.rotation);
 
-    let dp: Vec2 = Vec2.sub(posB, posA);
-    let dA: Vec2 = Mat22.mulMV(RotAT, dp);
-    let dB: Vec2 = Mat22.mulMV(RotBT, dp);
+    RotAT.transpose(bodyA.rotation);
+    RotBT.transpose(bodyB.rotation);
 
-    let C = Mat22.mulMM(RotAT, RotB);
-    let absC = Mat22.abs(C);
-    let absCT = Mat22.transpose(absC);
+    // let RotAT = Mat22.transpose(RotA);
+    // let RotBT = Mat22.transpose(RotB);
+
+    // let dp: Vec2 = Vec2.sub(posB, posA);
+
+    dp.set(
+        posB.x - posA.x,
+        posB.y - posA.y
+    );
+
+    // static mulMV (m: Mat22, v: Vec2): Vec2
+    // {
+    //     return new Vec2(
+    //         m.a * v.x + m.b * v.y,
+    //         m.c * v.x + m.d * v.y
+    //     );
+    // }
+
+    // let dA: Vec2 = Mat22.mulMV(RotAT, dp);
+
+    dA.set(
+        RotAT.a * dp.x + RotAT.b * dp.y,
+        RotAT.c * dp.x + RotAT.d * dp.y
+    );
+
+    // let dB: Vec2 = Mat22.mulMV(RotBT, dp);
+
+    dB.set(
+        RotBT.a * dp.x + RotBT.b * dp.y,
+        RotBT.c * dp.x + RotBT.d * dp.y
+    );
+
+    // let C = Mat22.mulMM(RotAT, RotB);
+
+    C.mulMM(RotAT, RotB);
+
+    // let absC = Mat22.abs(C);
+
+    Mat22.absM(C, absC);
+
+    // let absCT = Mat22.transpose(absC);
+
+    Mat22.transposeM(absC, absCT);
 
     // Box A faces
-    let faceA = Vec2.sub(Vec2.sub(Vec2.abs(dA), hA), Mat22.mulMV(absC, hB));
+
+    //                        faceA1                      faceA2
+    // let faceA = Vec2.sub(  Vec2.sub(Vec2.abs(dA), hA), Mat22.mulMV(absC, hB)  );
+
+    faceA1.set(
+        Math.abs(dA.x) - hA.x,
+        Math.abs(dA.y) - hA.y
+    );
+
+    //  store result in faceA2
+    Mat22.mulMVV(absC, hB, faceA2);
+
+    faceA.set(
+        faceA1.x - faceA2.x,
+        faceA1.y - faceA2.y
+    );
 
     if (faceA.x > 0 || faceA.y > 0)
     {
@@ -225,7 +317,24 @@ export default function Collide (contacts: Contact[], bodyA: Body, bodyB: Body):
     }
 
     // Box B faces
-    let faceB = Vec2.sub(Vec2.sub(Vec2.abs(dB), Mat22.mulMV(absCT, hA)), hB);
+
+    // let faceB = Vec2.sub(
+    //                      faceB1                 faceB2
+    //                      Vec2.sub(Vec2.abs(dB), Mat22.mulMV(absCT, hA)),
+    //                      hB);
+
+    //  store result in faceB2
+    Mat22.mulMVV(absCT, hA, faceB2);
+
+    faceB1.set(
+        Math.abs(dB.x) - faceB2.x,
+        Math.abs(dB.y) - faceB2.y
+    );
+
+    faceB.set(
+        faceB1.x - hB.x,
+        faceB1.y - hB.y
+    );
 
     if (faceB.x > 0 || faceB.y > 0)
     {
