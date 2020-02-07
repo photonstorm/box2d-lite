@@ -66,11 +66,71 @@ export default class World
         return this;
     }
 
-    /**
-     * Determine overlapping bodies and update contact points
-     */
     broadPhase ()
     {
+        window['arbitersTotal'] = 0;
+
+        let bodies = this.bodies;
+        let length = bodies.length;
+        let arbiters = this.arbiters;
+
+        for (let i: number = 0; i < length - 1; i++)
+        {
+            let bodyA: Body = bodies[i];
+
+            for (let j: number = i + 1; j < length; j++)
+            {
+                let bodyB: Body = bodies[j];
+
+                if (bodyA.invMass === 0 && bodyB.invMass === 0 || !bodyA.bounds.intersects(bodyB.bounds))
+                {
+                    continue;
+                }
+
+                let arbiter = new Arbiter(this, bodyA, bodyB);
+                let arbiterKey = new ArbiterKey(bodyA, bodyB);
+
+                window['arbitersTotal']++;
+
+                let iter = -1;
+
+                for (let a: number = 0; a < arbiters.length; a++)
+                {
+                    if (arbiters[a].first.value === arbiterKey.value)
+                    {
+                        iter = a;
+                        break;
+                    }
+                }
+
+                if (arbiter.numContacts > 0)
+                {
+                    if (iter === -1)
+                    {
+                        arbiters.push(new ArbiterPair(arbiterKey, arbiter));
+                    }
+                    else
+                    {
+                        arbiters[iter].second.update(arbiter.contacts, arbiter.numContacts);
+                    }
+                }
+                else if (arbiter.numContacts === 0 && iter > -1)
+                {
+                    //  Nuke empty arbiter with no contacts
+                    arbiters.splice(iter, 1);
+                }
+            }
+        }
+    }
+
+    /**
+     * Determine overlapping bodies and update contact points.
+     * WARNING: Horribly slow O(N^2)
+     */
+    OLDbroadPhase ()
+    {
+        window['arbitersTotal'] = 0;
+
         let bodies = this.bodies;
         let length = bodies.length;
         let arbiters = this.arbiters;
@@ -90,6 +150,8 @@ export default class World
 
                 let arbiter = new Arbiter(this, bodyA, bodyB);
                 let arbiterKey = new ArbiterKey(bodyA, bodyB);
+
+                window['arbitersTotal']++;
 
                 let iter = -1;
 
