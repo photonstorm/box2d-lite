@@ -287,5 +287,9 @@ The Body class now has `width` and `height` properties. This makes for a better 
 
 Created a new `AABB` Class. Each Body has a `bounds` property, which is an instance of the AABB class. It is updated during `Body.postStep` to keep the bounds in sync with the body position and rotation. If the body rotation hasn't changed (i.e. if fixed rotation, or just not rotated), then the bounds update uses a fast-path to avoid some math transforms.
 
-The CanvasRenderer can now render a Body bounds, too, with optional flag.
+The CanvasRenderer can now render a Body bounds, too, with optional flag:
+
+![image](pages/aabbdisplay.png)
+
+## v0.7.0
 
