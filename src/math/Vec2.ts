@@ -28,6 +28,8 @@ export default class Vec2
     {
         this.x = x;
         this.y = y;
+
+        return this;
     }
 
     add (v: Vec2)
@@ -53,9 +55,19 @@ export default class Vec2
         return new Vec2(vA.x + vB.x, vA.y + vB.y);
     }
 
+    static addV (vA: Vec2, vB: Vec2, out: Vec2): Vec2
+    {
+        return out.set(vA.x + vB.x, vA.y + vB.y);
+    }
+
     static sub (vA: Vec2, vB: Vec2): Vec2
     {
         return new Vec2(vA.x - vB.x, vA.y - vB.y);
+    }
+
+    static subV (vA: Vec2, vB: Vec2, out: Vec2): Vec2
+    {
+        return out.set(vA.x - vB.x, vA.y - vB.y);
     }
 
     static mulVV (vA: Vec2, vB: Vec2): Vec2
@@ -66,6 +78,11 @@ export default class Vec2
     static mulSV (s: number, v: Vec2): Vec2
     {
         return new Vec2(s * v.x, s * v.y);
+    }
+
+    static mulSVV (s: number, v: Vec2, out: Vec2): Vec2
+    {
+        return out.set(s * v.x, s * v.y);
     }
 
     static abs (v: Vec2): Vec2
@@ -116,5 +133,10 @@ export default class Vec2
     static crossSV (s: number, v: Vec2): Vec2
     {
         return new Vec2(-s * v.y, s * v.x);
+    }
+
+    static crossSVV (s: number, v: Vec2, out: Vec2): Vec2
+    {
+        return out.set(-s * v.y, s * v.x);
     }
 }
