@@ -1,5 +1,4 @@
 import FeaturePair from './FeaturePair';
-// import Vec2 from './math/Vec2';
 
 /**
  * Copyright (c) 2006-2007 Erin Catto http://www.gphysics.com
@@ -16,11 +15,6 @@ import FeaturePair from './FeaturePair';
 
 export default class Contact
 {
-    // position: Vec2;
-    // normal: Vec2;
-    // r1: Vec2;
-    // r2: Vec2;
-
     separation: number;
     Pn: number;         // accumulated normal impulse
     Pt: number;	        // accumulated tangent impulse
@@ -29,7 +23,6 @@ export default class Contact
     massTangent: number;
     bias: number;
     feature: FeaturePair;
-
     positionX: number;
     positionY: number;
     normalX: number;
@@ -41,11 +34,6 @@ export default class Contact
 
     constructor (separation: number, normalX: number, normalY: number, positionX: number, positionY: number, feature: FeaturePair)
     {
-        // this.position = new Vec2();
-        // this.normal = new Vec2();
-        // this.r1 = new Vec2();
-        // this.r2 = new Vec2();
-
         this.positionX = positionX;
         this.positionY = positionY;
         this.normalX = normalX;
@@ -54,7 +42,6 @@ export default class Contact
         this.r1Y = 0;
         this.r2X = 0;
         this.r2Y = 0;
-    
         this.separation = separation;
         this.Pn = 0;
         this.Pt = 0;
@@ -62,7 +49,6 @@ export default class Contact
         this.massNormal = 0;
         this.massTangent = 0;
         this.bias = 0;
-        // this.feature = new FeaturePair();
         this.feature = feature;
     }
 }
