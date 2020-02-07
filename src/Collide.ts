@@ -463,7 +463,7 @@ export default function Collide (contacts: Contact[], bodyA: Body, bodyB: Body):
 
     for (let i = 0; i < 2; i++)
     {
-        let separation = Vec2.dotXYV(frontNormalX, frontNormalY, clipPoints[i].v) - front;
+        let separation = Vec2.dotXY(frontNormalX, frontNormalY, clipPoints[i].x, clipPoints[i].y) - front;
 
         if (separation <= 0)
         {
@@ -471,8 +471,8 @@ export default function Collide (contacts: Contact[], bodyA: Body, bodyB: Body):
                 separation,
                 normalX,
                 normalY,
-                clipPoints[i].v.x - (separation * frontNormalX),
-                clipPoints[i].v.y - (separation * frontNormalY),
+                clipPoints[i].x - (separation * frontNormalX),
+                clipPoints[i].y - (separation * frontNormalY),
                 clipPoints[i].fp
             );
 

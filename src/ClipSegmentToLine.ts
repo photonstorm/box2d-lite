@@ -21,8 +21,8 @@ export default function ClipSegmentToLine (vOut: ClipVertex[], vIn: ClipVertex[]
     let numOut = 0;
   
     // Calculate the distance of end points to the line
-    let distance0 = Vec2.dotXYV(normalX, normalY, vIn[0].v) - offset;
-    let distance1 = Vec2.dotXYV(normalX, normalY, vIn[1].v) - offset;
+    let distance0 = Vec2.dotXY(normalX, normalY, vIn[0].x, vIn[0].y) - offset;
+    let distance1 = Vec2.dotXY(normalX, normalY, vIn[1].x, vIn[1].y) - offset;
 
     // If the points are behind the plane
     if (distance0 <= 0)
@@ -43,15 +43,9 @@ export default function ClipSegmentToLine (vOut: ClipVertex[], vIn: ClipVertex[]
         // Find intersection point of edge and plane
         let interp = distance0 / (distance0 - distance1);
 
-        let clip: ClipVertex = new ClipVertex();
-
-        //  This single line creates 3 vec2s into a newly created vec2!
-        // clip.v = Vec2.add(vIn[0].v, Vec2.mulSV(interp, Vec2.sub(vIn[1].v, vIn[0].v)));
-  
-        //  This saves 189 vec2 creations per frame:
-        clip.v.set(
-            vIn[0].v.x + (interp * (vIn[1].v.x - vIn[0].v.x)),
-            vIn[0].v.y + (interp * (vIn[1].v.y - vIn[0].v.y))
+        let clip: ClipVertex = new ClipVertex(
+            vIn[0].x + (interp * (vIn[1].x - vIn[0].x)),
+            vIn[0].y + (interp * (vIn[1].y - vIn[0].y))
         );
 
         if (distance0 > 0)

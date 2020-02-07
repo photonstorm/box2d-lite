@@ -1,4 +1,3 @@
-import Vec2 from './math/Vec2';
 import FeaturePair from './FeaturePair';
 
 /**
@@ -16,12 +15,23 @@ import FeaturePair from './FeaturePair';
 
  export default class ClipVertex
 {
-    v: Vec2;
+    x: number;
+    y: number;
     fp: FeaturePair;
 
-    constructor ()
+    constructor (x: number, y: number)
     {
-        this.v = new Vec2();
+        this.x = x;
+        this.y = y;
+
         this.fp = new FeaturePair();
+    }
+
+    set (x: number, y: number): ClipVertex
+    {
+        this.x = x;
+        this.y = y;
+
+        return this;
     }
 }

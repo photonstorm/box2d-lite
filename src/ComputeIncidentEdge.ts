@@ -45,28 +45,28 @@ export default function ComputeIncidentEdge (c: ClipVertex[], h: Vec2, pos: Vec2
 
     // let nAbs: Vec2 = Vec2.abs(n);
 
-    const clipVertex0: ClipVertex = new ClipVertex();
-    const clipVertex1: ClipVertex = new ClipVertex();
+    const clipVertex0: ClipVertex = new ClipVertex(0, 0);
+    const clipVertex1: ClipVertex = new ClipVertex(0, 0);
 
     if (absX > absY)
     {
         if (Math.sign(nX) > 0)
         {
-            clipVertex0.v.set(h.x, -h.y);
+            clipVertex0.set(h.x, -h.y);
             clipVertex0.fp.e.inEdge2 = EdgeNumbers.EDGE3;
             clipVertex0.fp.e.outEdge2 = EdgeNumbers.EDGE4;
 
-            clipVertex1.v.set(h.x, h.y);
+            clipVertex1.set(h.x, h.y);
             clipVertex1.fp.e.inEdge2 = EdgeNumbers.EDGE4;
             clipVertex1.fp.e.outEdge2 = EdgeNumbers.EDGE1;
         }
         else
         {
-            clipVertex0.v.set(-h.x, h.y);
+            clipVertex0.set(-h.x, h.y);
             clipVertex0.fp.e.inEdge2 = EdgeNumbers.EDGE1;
             clipVertex0.fp.e.outEdge2 = EdgeNumbers.EDGE2;
 
-            clipVertex1.v.set(-h.x, -h.y);
+            clipVertex1.set(-h.x, -h.y);
             clipVertex1.fp.e.inEdge2 = EdgeNumbers.EDGE2;
             clipVertex1.fp.e.outEdge2 = EdgeNumbers.EDGE3;
         }
@@ -75,21 +75,21 @@ export default function ComputeIncidentEdge (c: ClipVertex[], h: Vec2, pos: Vec2
     {
         if (Math.sign(nY) > 0)
         {
-            clipVertex0.v.set(h.x, h.y);
+            clipVertex0.set(h.x, h.y);
             clipVertex0.fp.e.inEdge2 = EdgeNumbers.EDGE4;
             clipVertex0.fp.e.outEdge2 = EdgeNumbers.EDGE1;
 
-            clipVertex1.v.set(-h.x, h.y);
+            clipVertex1.set(-h.x, h.y);
             clipVertex1.fp.e.inEdge2 = EdgeNumbers.EDGE1;
             clipVertex1.fp.e.outEdge2 = EdgeNumbers.EDGE2;
         }
         else
         {
-            clipVertex0.v.set(-h.x, -h.y);
+            clipVertex0.set(-h.x, -h.y);
             clipVertex0.fp.e.inEdge2 = EdgeNumbers.EDGE2;
             clipVertex0.fp.e.outEdge2 = EdgeNumbers.EDGE3;
 
-            clipVertex1.v.set(h.x, -h.y);
+            clipVertex1.set(h.x, -h.y);
             clipVertex1.fp.e.inEdge2 = EdgeNumbers.EDGE3;
             clipVertex1.fp.e.outEdge2 = EdgeNumbers.EDGE4;
         }
@@ -99,18 +99,18 @@ export default function ComputeIncidentEdge (c: ClipVertex[], h: Vec2, pos: Vec2
     // clipVertex1.v = Vec2.add(pos, Mat22.mulMV(Rot, clipVertex1.v));
     
     //  inline:
-    const v0 = clipVertex0.v;
-    const v1 = clipVertex1.v;
+    // const v0 = clipVertex0.v;
+    // const v1 = clipVertex1.v;
 
-    let mx = pos.x + (Rot.a * v0.x + Rot.b * v0.y);
-    let my = pos.y + (Rot.c * v0.x + Rot.d * v0.y);
+    let mx = pos.x + (Rot.a * clipVertex0.x + Rot.b * clipVertex0.y);
+    let my = pos.y + (Rot.c * clipVertex0.x + Rot.d * clipVertex0.y);
 
-    v0.set(mx, my);
+    clipVertex0.set(mx, my);
 
-    mx = pos.x + (Rot.a * v1.x + Rot.b * v1.y);
-    my = pos.y + (Rot.c * v1.x + Rot.d * v1.y);
+    mx = pos.x + (Rot.a * clipVertex1.x + Rot.b * clipVertex1.y);
+    my = pos.y + (Rot.c * clipVertex1.x + Rot.d * clipVertex1.y);
 
-    v1.set(mx, my);
+    clipVertex1.set(mx, my);
 
     c[0] = clipVertex0;
     c[1] = clipVertex1;
