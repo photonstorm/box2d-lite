@@ -1,55 +1,40 @@
 class AABB {
     constructor(body) {
-        // center
+        this.body = body;
         this.x = 0;
         this.y = 0;
-        // top-left
         this.x1 = 0;
-        this.y1 = 0;
-        //  bottom-right
         this.x2 = 0;
+        this.y1 = 0;
         this.y2 = 0;
-        //  width / height
         this.width = 0;
         this.height = 0;
-        this.body = body;
-        this.prevAngle = Number.MIN_VALUE;
-        this.update();
     }
     update() {
         const body = this.body;
         this.x = body.position.x;
         this.y = body.position.y;
-        if (body.rotation === this.prevAngle) {
-            this.x1 = this.x - (this.width * 0.5);
-            this.x2 = this.x + (this.width * 0.5);
-            this.y1 = this.y - (this.height * 0.5);
-            this.y2 = this.y + (this.height * 0.5);
-        }
-        else {
-            //  The top-right and bottom-right corners (unrotated)
-            const c1x = body.width * 0.5;
-            const c2x = body.width * 0.5;
-            const c1y = -body.height * 0.5;
-            const c2y = body.height * 0.5;
-            const sin = Math.sin(body.rotation);
-            const cos = Math.cos(body.rotation);
-            //  Transformed corners
-            const x1x = c1x * cos - c1y * sin;
-            const x1y = c1x * sin + c1y * cos;
-            const x2x = c2x * cos - c2y * sin;
-            const x2y = c2x * sin + c2y * cos;
-            //  Extents
-            const ex = Math.max(Math.abs(x1x), Math.abs(x2x));
-            const ey = Math.max(Math.abs(x1y), Math.abs(x2y));
-            this.x1 = this.x - ex;
-            this.x2 = this.x + ex;
-            this.y1 = this.y - ey;
-            this.y2 = this.y + ey;
-            this.width = this.x2 - this.x1;
-            this.height = this.y2 - this.y1;
-            this.prevAngle = body.rotation;
-        }
+        //  The top-right and bottom-right corners (unrotated)
+        const c1x = body.width * 0.5;
+        const c2x = body.width * 0.5;
+        const c1y = -body.height * 0.5;
+        const c2y = body.height * 0.5;
+        const sin = Math.sin(body.rotation);
+        const cos = Math.cos(body.rotation);
+        //  Transformed corners
+        const x1x = c1x * cos - c1y * sin;
+        const x1y = c1x * sin + c1y * cos;
+        const x2x = c2x * cos - c2y * sin;
+        const x2y = c2x * sin + c2y * cos;
+        //  Extents
+        const ex = Math.max(Math.abs(x1x), Math.abs(x2x));
+        const ey = Math.max(Math.abs(x1y), Math.abs(x2y));
+        this.x1 = this.x - ex;
+        this.x2 = this.x + ex;
+        this.y1 = this.y - ey;
+        this.y2 = this.y + ey;
+        this.width = this.x2 - this.x1;
+        this.height = this.y2 - this.y1;
     }
     isPoint() {
         return (this.width === 0 && this.height === 0);
@@ -379,7 +364,8 @@ class CanvasRenderer {
         }
         if (this.showContacts) {
             for (let i = 0; i < arbiters.length; i++) {
-                let arbiter = arbiters[i].second;
+                // let arbiter = arbiters[i].second;
+                let arbiter = arbiters[i];
                 for (let c = 0; c < arbiter.contacts.length; c++) {
                     this.renderContact(arbiter.contacts[c], context);
                 }
@@ -1011,7 +997,7 @@ function Collide(contacts, bodyA, bodyB) {
  * Ported to TypeScript by Richard Davey, 2020.
  */
 class Arbiter {
-    constructor(world, body1, body2) {
+    constructor(world, body1, body2, id) {
         this.world = world;
         if (body1.id < body2.id) {
             this.body1 = body1;
@@ -1021,16 +1007,28 @@ class Arbiter {
             this.body1 = body2;
             this.body2 = body1;
         }
+        this.id = id;
         this.contacts = [];
-        this.numContacts = 0;
-        this.friction = 0;
-        if (this.stillActive()) {
-            this.numContacts = Collide(this.contacts, this.body1, this.body2);
-            this.friction = Math.sqrt(this.body1.friction * this.body2.friction);
-        }
+        this.numContacts = Collide(this.contacts, this.body1, this.body2);
+        this.friction = Math.sqrt(this.body1.friction * this.body2.friction);
+        this.fresh = true;
     }
     stillActive() {
         return this.body1.bounds.intersects(this.body2.bounds);
+    }
+    //  Refresh this Arbiter - are the bodies still intersecting? If so, get the new contacts
+    refresh() {
+        // if (this.stillActive())
+        // {
+        let newContacts = [];
+        let numNewContacts = Collide(newContacts, this.body1, this.body2);
+        this.update(newContacts, numNewContacts);
+        // }
+        // else
+        // {
+        //     this.numContacts = 0;
+        // }
+        return (this.numContacts === 0);
     }
     update(newContacts, numNewContacts) {
         let mergedContacts = [];
@@ -1068,6 +1066,7 @@ class Arbiter {
         this.contacts = mergedContacts;
         this.numContacts = numNewContacts;
     }
+    //  return `true` if we should keep this Arbiter, or false if it's dead
     preStep(inverseDelta) {
         const allowedPenetration = this.world.allowedPenetration;
         let contacts = this.contacts;
@@ -1112,6 +1111,7 @@ class Arbiter {
                 }
             }
         }
+        return (numContacts > 0);
     }
     applyImpulse() {
         let contacts = this.contacts;
@@ -1185,45 +1185,7 @@ class Arbiter {
                 body2.angularVelocity += body2.invI * Vec2.crossXY(c.r2X, c.r2X, PnX, PnY);
             }
         }
-    }
-}
-
-/**
- * Copyright (c) 2006-2007 Erin Catto http://www.gphysics.com
- *
- * Permission to use, copy, modify, distribute and sell this software
- * and its documentation for any purpose is hereby granted without fee,
- * provided that the above copyright notice appear in all copies.
- * Erin Catto makes no representations about the suitability
- * of this software for any purpose.
- * It is provided "as is" without express or implied warranty.
- *
- * Ported to TypeScript by Richard Davey, 2020.
- */
-class ArbiterKey {
-    constructor(bodyA, bodyB, key) {
-        this.bodyA = bodyA;
-        this.bodyB = bodyB;
-        this.value = (key) ? key : bodyA.id + ':' + bodyB.id;
-    }
-}
-
-/**
- * Copyright (c) 2006-2007 Erin Catto http://www.gphysics.com
- *
- * Permission to use, copy, modify, distribute and sell this software
- * and its documentation for any purpose is hereby granted without fee,
- * provided that the above copyright notice appear in all copies.
- * Erin Catto makes no representations about the suitability
- * of this software for any purpose.
- * It is provided "as is" without express or implied warranty.
- *
- * Ported to TypeScript by Richard Davey, 2020.
- */
-class ArbiterPair {
-    constructor(key, arbiter) {
-        this.first = key;
-        this.second = arbiter;
+        this.fresh = false;
     }
 }
 
@@ -1392,24 +1354,23 @@ class Quad {
  * Ported to TypeScript by Richard Davey, 2020.
  */
 class World {
-    constructor(gravity = new Vec2(0, 9.807), iterations = 10) {
+    constructor(width, height, gravity = new Vec2(0, 9.807), iterations = 10) {
         this.bodyIdSeed = 0;
         this.bodies = [];
         this.joints = [];
         this.arbiters = [];
-        this.arbiterKeys = {};
         this.gravity = new Vec2();
         this.accumulateImpulses = true;
         this.warmStarting = true;
         this.iterations = 10;
         this.positionCorrection = 0.2;
         this.allowedPenetration = 0.01; // slop
-        this.width = 2048;
-        this.height = 2048;
         this.gravity.x = gravity.x;
         this.gravity.y = gravity.y;
+        this.width = width;
+        this.height = height;
         this.iterations = iterations;
-        this.quadTree = new Quad(0, 0, 2048, 2048);
+        this.quadTree = new Quad(0, 0, this.width, this.height);
     }
     addBody(body) {
         this.bodyIdSeed++;
@@ -1427,8 +1388,93 @@ class World {
         this.arbiters = [];
         return this;
     }
-    QUADbroadPhase() {
+    /**
+     * Determine overlapping bodies and update contact points.
+     * WARNING: Horribly slow O(N^2)
+     */
+    OLDbroadPhase() {
         window['arbitersTotal'] = 0;
+        window['arbitersMerged'] = 0;
+        let bodies = this.bodies;
+        let length = bodies.length;
+        let arbiters = this.arbiters;
+        for (let i = 0; i < length - 1; i++) {
+            let bodyA = bodies[i];
+            for (let j = i + 1; j < length; j++) {
+                let bodyB = bodies[j];
+                if (bodyA.invMass === 0 && bodyB.invMass === 0) {
+                    continue;
+                }
+                let key = bodyA.id + ':' + bodyB.id;
+                let arbiter = new Arbiter(this, bodyA, bodyB, key);
+                // let arbiterKey = new ArbiterKey(arbiter.body1, arbiter.body2);
+                window['arbitersTotal']++;
+                let iter = -1;
+                for (let a = 0; a < arbiters.length; a++) {
+                    //  We have an arbiter for this body pair already, store the array index in `iter`
+                    if (arbiters[a].id === key) {
+                        iter = a;
+                        break;
+                    }
+                }
+                //  if in contact (passed AABB check and clip check)
+                if (arbiter.numContacts > 0) {
+                    window['arbitersMerged']++;
+                    if (iter === -1) {
+                        //  new arbiter, create a Pair and shove into the array
+                        // arbiters.push(new ArbiterPair(arbiterKey, arbiter));
+                        arbiters.push(arbiter);
+                    }
+                    else {
+                        //  Already in the array, so update the Arbiter instance, passing in the new contacts
+                        // arbiters[iter].second.update(arbiter.contacts, arbiter.numContacts);
+                        arbiters[iter].update(arbiter.contacts, arbiter.numContacts);
+                    }
+                }
+                else if (arbiter.numContacts === 0 && iter > -1) {
+                    //  Nuke empty Arbiter Pair, as the two bodies no longer have any contact
+                    arbiters.splice(iter, 1);
+                }
+            }
+        }
+    }
+    OLDstep(delta) {
+        let inverseDelta = (delta > 0) ? 1 / delta : 0;
+        this.OLDbroadPhase();
+        //  Integrate forces
+        const bodies = this.bodies;
+        const gravity = this.gravity;
+        for (let i = 0; i < bodies.length; i++) {
+            bodies[i].preStep(delta, gravity);
+        }
+        //  Pre-steps
+        const arbiters = this.arbiters;
+        const joints = this.joints;
+        for (let i = 0; i < arbiters.length; i++) {
+            arbiters[i].preStep(inverseDelta);
+        }
+        for (let i = 0; i < joints.length; i++) {
+            joints[i].preStep(inverseDelta);
+        }
+        //  Perform iterations
+        for (let i = 0; i < this.iterations; i++) {
+            //  Apply impulse
+            for (let arb = 0; arb < arbiters.length; arb++) {
+                arbiters[arb].applyImpulse();
+            }
+            //  Apply joint impulse
+            for (let j = 0; j < joints.length; j++) {
+                joints[j].applyImpulse();
+            }
+        }
+        //  Integrate velocities
+        for (let i = 0; i < bodies.length; i++) {
+            bodies[i].postStep(delta);
+        }
+    }
+    broadPhase() {
+        window['arbitersTotal'] = 0;
+        window['arbitersMerged'] = 0;
         const quad = this.quadTree;
         quad.clear();
         const bodies = this.bodies;
@@ -1446,120 +1492,28 @@ class World {
                 if (bodyA.id === bodyB.id || (bodyA.invMass === 0 && bodyB.invMass === 0)) {
                     continue;
                 }
-                let arbiter = new Arbiter(this, bodyA, bodyB);
-                let arbiterKey = new ArbiterKey(bodyA, bodyB);
-                window['arbitersTotal']++;
-                let iter = -1;
-                for (let a = 0; a < arbiters.length; a++) {
-                    if (arbiters[a].first.value === arbiterKey.value) {
-                        iter = a;
-                        break;
-                    }
-                }
-                if (arbiter.numContacts > 0) {
-                    if (iter === -1) {
-                        arbiters.push(new ArbiterPair(arbiterKey, arbiter));
-                    }
-                    else {
-                        arbiters[iter].second.update(arbiter.contacts, arbiter.numContacts);
-                    }
-                }
-                else if (arbiter.numContacts === 0 && iter > -1) {
-                    //  Nuke empty arbiter with no contacts
-                    arbiters.splice(iter, 1);
-                }
-            }
-        }
-    }
-    AABBbroadPhase() {
-        window['arbitersTotal'] = 0;
-        let bodies = this.bodies;
-        let length = bodies.length;
-        let arbiters = this.arbiters;
-        for (let i = 0; i < length - 1; i++) {
-            let bodyA = bodies[i];
-            for (let j = i + 1; j < length; j++) {
-                let bodyB = bodies[j];
                 let key = bodyA.id + ':' + bodyB.id;
-                if (bodyA.invMass === 0 && bodyB.invMass === 0 || !bodyA.bounds.intersects(bodyB.bounds)) {
-                    //  They no longer intersect, but they _may_ have before, so we need to clean the arbiter up
-                    if (this.arbiterKeys[key]) {
-                        let idx = arbiters.indexOf(this.arbiterKeys[key]);
-                        if (idx !== -1) {
-                            arbiters.splice(idx, 1);
-                        }
-                        delete this.arbiterKeys[key];
-                    }
-                    continue;
-                }
-                let arbiter = new Arbiter(this, bodyA, bodyB);
-                let arbiterKey = new ArbiterKey(bodyA, bodyB, key);
-                window['arbitersTotal']++;
-                let iter = -1;
+                let foundPair = false;
                 for (let a = 0; a < arbiters.length; a++) {
-                    if (arbiters[a].first.value === key) {
-                        iter = a;
+                    //  We have an arbiter for this body pair already
+                    //  Make sure it wasn't created this frame too, if it wasn't, we can update it
+                    if (arbiters[a].id === key) {
+                        foundPair = true;
                         break;
                     }
                 }
-                if (arbiter.numContacts > 0) {
-                    if (iter === -1) {
-                        arbiters.push(new ArbiterPair(arbiterKey, arbiter));
-                        this.arbiterKeys[key] = arbiter;
-                    }
-                    else {
-                        arbiters[iter].second.update(arbiter.contacts, arbiter.numContacts);
-                    }
-                }
-                else if (arbiter.numContacts === 0 && iter > -1) {
-                    //  Nuke empty arbiter with no contacts
-                    arbiters.splice(iter, 1);
-                    delete this.arbiterKeys[key];
-                }
-            }
-        }
-    }
-    /**
-     * Determine overlapping bodies and update contact points.
-     * WARNING: Horribly slow O(N^2)
-     */
-    OLDbroadPhase() {
-        window['arbitersTotal'] = 0;
-        let bodies = this.bodies;
-        let length = bodies.length;
-        let arbiters = this.arbiters;
-        for (let i = 0; i < length - 1; i++) {
-            let bodyA = bodies[i];
-            for (let j = i + 1; j < length; j++) {
-                let bodyB = bodies[j];
-                if (bodyA.invMass === 0 && bodyB.invMass === 0) {
+                if (foundPair) {
                     continue;
                 }
-                let arbiter = new Arbiter(this, bodyA, bodyB);
-                let arbiterKey = new ArbiterKey(bodyA, bodyB);
-                window['arbitersTotal']++;
-                let iter = -1;
-                for (let a = 0; a < arbiters.length; a++) {
-                    //  We have an arbiter for this body pair already, store the array index in `iter`
-                    if (arbiters[a].first.value === arbiterKey.value) {
-                        iter = a;
-                        break;
+                else {
+                    //  They intersect!
+                    //  Need a new Arbiter as we don't have one for this pair
+                    let arbiter = new Arbiter(this, bodyA, bodyB, key);
+                    window['arbitersTotal']++;
+                    if (arbiter.numContacts > 0) {
+                        //  Even though they intersect, we still check the contacts (as only the bounds intersect)
+                        arbiters.push(arbiter);
                     }
-                }
-                //  if in contact (passed AABB check and clip check)
-                if (arbiter.numContacts > 0) {
-                    if (iter === -1) {
-                        //  new arbiter, create a Pair and shove into the array
-                        arbiters.push(new ArbiterPair(arbiterKey, arbiter));
-                    }
-                    else {
-                        //  Already in the array, so update the Arbiter instance, passing in the new contacts
-                        arbiters[iter].second.update(arbiter.contacts, arbiter.numContacts);
-                    }
-                }
-                else if (arbiter.numContacts === 0 && iter > -1) {
-                    //  Nuke empty Arbiter Pair, as the two bodies no longer have any contact
-                    arbiters.splice(iter, 1);
                 }
             }
         }
@@ -1568,9 +1522,11 @@ class World {
         const arbiters = this.arbiters;
         const joints = this.joints;
         let inverseDelta = (delta > 0) ? 1 / delta : 0;
-        this.OLDbroadPhase();
-        // this.AABBbroadPhase();
-        // this.QUADbroadPhase();
+        //  refresh all of the current arbiters
+        for (let i = 0; i < arbiters.length; i++) {
+            arbiters[i].refresh();
+        }
+        this.broadPhase();
         //  Integrate forces
         const bodies = this.bodies;
         const gravity = this.gravity;
@@ -1578,17 +1534,22 @@ class World {
             bodies[i].preStep(delta, gravity);
         }
         //  Pre-steps
+        const remainingArbiters = [];
         for (let i = 0; i < arbiters.length; i++) {
-            arbiters[i].second.preStep(inverseDelta);
+            if (arbiters[i].preStep(inverseDelta)) {
+                remainingArbiters.push(arbiters[i]);
+            }
         }
+        //  Swizzle them
+        this.arbiters = remainingArbiters;
         for (let i = 0; i < joints.length; i++) {
             joints[i].preStep(inverseDelta);
         }
         //  Perform iterations
         for (let i = 0; i < this.iterations; i++) {
             //  Apply impulse
-            for (let arb = 0; arb < arbiters.length; arb++) {
-                arbiters[arb].second.applyImpulse();
+            for (let arb = 0; arb < remainingArbiters.length; arb++) {
+                remainingArbiters[arb].applyImpulse();
             }
             //  Apply joint impulse
             for (let j = 0; j < joints.length; j++) {
@@ -1603,15 +1564,15 @@ class World {
 }
 
 let delta = 1 / 30;
-// let world = new World(new Vec2(0, 40), 10);
-let world = new World();
+let world = new World(800 * 1, 600, new Vec2(0, 40));
 //  helps reduce stack jiggle
 // world.positionCorrection = 0.1;
 // world.allowedPenetration = 0;
 // world.warmStarting = false;
 // world.accumulateImpulses = false;
-let floor = new Body(800, 64, Number.MAX_VALUE);
-floor.position.set(400, 600 + 32);
+// world.iterations = 20;
+let floor = new Body(world.width, 64, Number.MAX_VALUE);
+floor.position.set(world.width / 2, world.height + 32);
 floor.friction = 0;
 world.addBody(floor);
 let leftWall = new Body(64, 1200, Number.MAX_VALUE);
@@ -1619,16 +1580,50 @@ leftWall.position.set(-32, 600);
 leftWall.friction = 0;
 world.addBody(leftWall);
 let rightWall = new Body(64, 1200, Number.MAX_VALUE);
-rightWall.position.set(832, 600);
+rightWall.position.set(world.width + 32, 600);
 rightWall.friction = 0;
 world.addBody(rightWall);
 //  Mass box test
-for (let i = 0; i < 100; i++) {
-    let box = new Body(8 + Math.random() * 32, 8 + Math.random() * 32, 10);
+/*
+let quad = new Quad(0, 0, 2048, 2048);
+
+window['quad'] = function ()
+{
+    quad.clear();
+
+    //  Seed the quadtree
+
+    for (let i: number = 0; i < world.bodies.length; i++)
+    {
+        quad.add(world.bodies[i].bounds);
+    }
+
+    for (let i: number = 0; i < world.bodies.length; i++)
+    {
+        let bodyA: Body = world.bodies[i];
+
+        let results = quad.getIntersections(bodyA.bounds);
+
+        console.log(bodyA.id, '=', results.length);
+
+        // for (let j: number = 0; j < results.length; j++)
+        // {
+        //     let bodyB: Body = results[j].body;
+
+        //     if (bodyA.id === bodyB.id || (bodyA.invMass === 0 && bodyB.invMass === 0))
+        //     {
+        //         continue;
+        //     }
+        // }
+    }
+}
+*/
+for (let i = 0; i < 200; i++) {
+    let box = new Body(8 + Math.random() * 32, 8 + Math.random() * 32, 1);
     box.rotation = Math.random() * Math.PI;
-    box.position.set(100 + Math.random() * 500, -1600 + Math.random() * 1600);
+    box.position.set(100 + (Math.random() * (world.width - 200)), -1600 + Math.random() * 1600);
     // box.position.set(400 - Math.random() * 100, 520 - (i * 40));
-    // box.friction = 0;
+    // box.friction = 1;
     // box.fixedRotation = true;
     world.addBody(box);
 }
@@ -1647,7 +1642,7 @@ for (let i = 0; i < 16; i++)
 */
 let renderer = new CanvasRenderer(document.getElementById('demo'));
 renderer.showContacts = false;
-// renderer.showBounds = false;
+renderer.showBounds = false;
 let pause = false;
 let frame = 0;
 let frameText = document.getElementById('frame');
@@ -1657,14 +1652,18 @@ document.getElementById('pause').addEventListener('click', () => {
     pause = (pause) ? false : true;
 });
 window['arbitersTotal'] = 0;
+window['arbitersMerged'] = 0;
+window['world'] = world;
 function loop() {
     if (!pause) {
         world.step(delta);
+        // world.OLDstep(delta);
         renderer.render(world);
         frameText.value = frame.toString();
         // bodiesText.value = world.bodies.length.toString();
         // arbitersText.value = world.arbiters.length.toString();
         bodiesText.value = world.arbiters.length.toString();
+        // bodiesText.value = window['arbitersMerged'].toString();
         arbitersText.value = window['arbitersTotal'].toString();
         frame++;
     }
