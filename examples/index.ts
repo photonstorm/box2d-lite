@@ -14,7 +14,7 @@ let demoIndex = 0;
 
 let width = 1280;
 let height = 720;
-let zoom = 20;
+let zoom = 30;
 let pan_x = 0;
 let pan_y = 8;
 let bomb: Body;
@@ -167,6 +167,15 @@ function Demo5 ()
 // A teeter
 function Demo6 ()
 {
+    const b1 = world.addBody(new Body(0, 0.5 * 20, 100, 20, Number.MAX_VALUE));
+
+    const b2 = world.addBody(new Body(0, -1, 12, 0.25, 100));
+    const b3 = world.addBody(new Body(-5, -2, 0.5, 0.5, 25));
+    const b4 = world.addBody(new Body(-5.5, -2, 0.5, 0.5, 25));
+    const b5 = world.addBody(new Body(5.5, -15, 1, 1, 100));
+
+    let j = world.addJoint(new Joint());
+    j.set(world, b1, b2, new Vec2(0, -1));
 }
 
 // A suspension bridge
@@ -177,6 +186,44 @@ function Demo7 ()
 // Dominos
 function Demo8 ()
 {
+    const b1 = world.addBody(new Body(0, 0.5 * 20, 100, 20, Number.MAX_VALUE));
+
+    world.addBody(new Body(-1.5, -10, 10, 0.5, Number.MAX_VALUE));
+
+    let b: Body;
+
+    for (let i: number = 0; i < 10; i++)
+    {
+        b = new Body(-6 + (1 * i), -11.125, 0.2, 2.0, 10);
+        b.friction = 0.1;
+        world.addBody(b);
+    }
+
+    b = world.addBody(new Body(1, -6, 14, 0.5, Number.MAX_VALUE));
+    b.rotation = -0.3;
+
+    const b2 = world.addBody(new Body(-7, -4, 0.5, 3.0, Number.MAX_VALUE));
+
+    const b3 = world.addBody(new Body(-0.9, -1, 12, 0.25, 20));
+
+    let j: Joint = world.addJoint(new Joint());
+    j.set(world, b1, b3, new Vec2(-2, -1));
+
+    const b4 = world.addBody(new Body(-10, -15, 0.5, 0.5, 10));
+
+    j = world.addJoint(new Joint());
+    j.set(world, b2, b4, new Vec2(-7, -15));
+
+    const b5 = world.addBody(new Body(6, -2.5, 2, 2, 20));
+    b5.friction = 0.1;
+
+    j = world.addJoint(new Joint());
+    j.set(world, b1, b5, new Vec2(6, -2.6));
+
+    const b6 = world.addBody(new Body(6, -3.6, 2, 0.2, 10));
+
+    j = world.addJoint(new Joint());
+    j.set(world, b5, b6, new Vec2(7, -3.5));
 }
 
 // A multi-pendulum
@@ -184,7 +231,7 @@ function Demo9 ()
 {
 }
 
-InitDemo(5);
+InitDemo(8);
 
 let renderer = new CanvasRenderer(document.getElementById('demo') as HTMLCanvasElement);
 
@@ -212,8 +259,8 @@ function loop ()
 {
     if (!pause)
     {
-        world.step(delta);
-        // world.OLDstep(delta);
+        // world.step(delta);
+        world.OLDstep(delta);
 
         renderer.render(world, zoom, pan_x, pan_y);
 

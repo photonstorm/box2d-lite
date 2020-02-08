@@ -363,4 +363,11 @@ So far, I've created the Single Box, Vertical Stack and Pyramid demos.
 
 Interestingly, running the pyramid demo with the new World step causes bodies to fall off the top. Using the old World step and they're a lot more solid. It appears more work is required in the QuadTree approach, as Arbiters are being eliminated too early, or (more likely) not being created because there is no previous intersection, where-as they really should have been.
 
+`World.addBody` and `World.addJoint` now return the body and joint instance, rather than the World. This makes it easier to create bodies dynamically. I'll update both of these methods soon so they can take arrays and are more robust (i.e. don't try adding bodies into a World that already has them! as chaos ensues)
+
+Finished the Teeter demo. It highlights the Arbiter issue even more clearly than the Pyramid :) At least it shows that joints are working!
+
+## v0.11.0
+
+Finally built the Dominos demo. Not convinced this is working the same as the C version, but it does actually work. Will need to build the C test app and compare them. Either way, it looks good :)
 
