@@ -153,7 +153,7 @@ class Vec2 {
  * Ported to TypeScript by Richard Davey, 2020.
  */
 class Body {
-    constructor(width, height, mass) {
+    constructor(x, y, width, height, mass) {
         this.position = new Vec2();
         this.rotation = 0;
         this.velocity = new Vec2();
@@ -168,9 +168,10 @@ class Body {
         this.fixedRotation = false;
         this.id = 0;
         this.bounds = new AABB(this);
-        this.set(width, height, mass);
+        this.position.set(x, y);
+        this.setSize(width, height, mass);
     }
-    set(width, height, mass) {
+    setSize(width, height, mass) {
         this.width = width;
         this.height = height;
         this.mass = mass;
@@ -336,6 +337,7 @@ class CanvasRenderer {
         this.showBounds = true;
         this.showContacts = true;
         this.showJoints = true;
+        this.zoom = 1;
         this.canvas = canvas;
         this.context = canvas.getContext('2d');
         this._M0 = new Mat22();
@@ -346,12 +348,29 @@ class CanvasRenderer {
         this._v4 = new Vec2();
         this._orientation = new Vec2();
     }
-    render(world) {
+    init(zoom) {
+        const context = this.context;
+        context.setTransform();
+        context.translate(this.canvas.width / 2, this.canvas.height / 2);
+        context.scale(zoom, zoom);
+        this.zoom = zoom;
+    }
+    render(world, zoom = 1, panX = 0, panY = 0) {
         const context = this.context;
         const bodies = world.bodies;
         const joints = world.joints;
         const arbiters = world.arbiters;
-        context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        //  Set the scale and pan
+        const w = this.canvas.width;
+        const h = this.canvas.height;
+        context.setTransform();
+        context.clearRect(0, 0, w, h);
+        //  center it
+        context.translate(w / 2, h / 2);
+        //  pan it
+        context.translate(panX * zoom, panY * zoom);
+        context.scale(zoom, zoom);
+        this.zoom = zoom;
         if (this.showBodies) {
             for (let i = 0; i < bodies.length; i++) {
                 this.renderBody(bodies[i], context);
@@ -379,10 +398,8 @@ class CanvasRenderer {
     }
     renderBodyBounds(body, ctx) {
         ctx.strokeStyle = 'grey';
-        ctx.lineWidth = 0.5;
-        ctx.beginPath();
-        ctx.rect(body.bounds.x1, body.bounds.y1, body.bounds.width, body.bounds.height);
-        ctx.stroke();
+        ctx.lineWidth = 0.5 / this.zoom;
+        ctx.strokeRect(body.bounds.x1, body.bounds.y1, body.bounds.width, body.bounds.height);
     }
     renderBody(body, ctx) {
         this._M0.set(body.rotation);
@@ -401,9 +418,9 @@ class CanvasRenderer {
         orientation.set(position.x + (this._M0.a * hX), position.y + (this._M0.c * hX));
         // draw centroid of rectangle
         ctx.strokeStyle = 'black';
-        ctx.lineWidth = 0.5;
+        ctx.lineWidth = 0.5 / this.zoom;
         ctx.beginPath();
-        ctx.arc(body.position.x, body.position.y, 2, 0, 2 * Math.PI);
+        ctx.arc(body.position.x, body.position.y, 2 / this.zoom, 0, 2 * Math.PI);
         // draw shape
         ctx.moveTo(v1.x, v1.y);
         ctx.lineTo(v2.x, v2.y);
@@ -418,9 +435,9 @@ class CanvasRenderer {
     }
     renderContact(contact, ctx) {
         ctx.strokeStyle = 'red';
-        ctx.lineWidth = 0.5;
+        ctx.lineWidth = 0.5 / this.zoom;
         ctx.beginPath();
-        ctx.arc(contact.positionX, contact.positionY, 2, 0, 2 * Math.PI);
+        ctx.arc(contact.positionX, contact.positionY, 2 / this.zoom, 0, 2 * Math.PI);
         ctx.stroke();
     }
     renderJoint(joint, ctx) {
@@ -1563,108 +1580,94 @@ class World {
     }
 }
 
-let delta = 1 / 30;
-let world = new World(800 * 1, 600, new Vec2(0, 40));
-//  helps reduce stack jiggle
-// world.positionCorrection = 0.1;
-// world.allowedPenetration = 0;
-// world.warmStarting = false;
-// world.accumulateImpulses = false;
-// world.iterations = 20;
-let floor = new Body(world.width, 64, Number.MAX_VALUE);
-floor.position.set(world.width / 2, world.height + 32);
-floor.friction = 0;
-world.addBody(floor);
-let leftWall = new Body(64, 1200, Number.MAX_VALUE);
-leftWall.position.set(-32, 600);
-leftWall.friction = 0;
-world.addBody(leftWall);
-let rightWall = new Body(64, 1200, Number.MAX_VALUE);
-rightWall.position.set(world.width + 32, 600);
-rightWall.friction = 0;
-world.addBody(rightWall);
-//  Mass box test
-/*
-let quad = new Quad(0, 0, 2048, 2048);
+/**
+ * @author       Richard Davey <rich@photonstorm.com>
+ * @copyright    2020 Photon Storm Ltd.
+ * @license      {@link https://opensource.org/licenses/MIT|MIT License}
+ */
+/**
+ * Generate a random floating point number between the two given bounds, minimum inclusive, maximum exclusive.
+ *
+ * @function Random
+ *
+ * @param {number} min - The lower bound for the float, inclusive.
+ * @param {number} max - The upper bound for the float exclusive.
+ *
+ * @return {number} A random float within the given range.
+ */
+function Random(min, max) {
+    return Math.random() * (max - min) + min;
+}
 
-window['quad'] = function ()
-{
-    quad.clear();
-
-    //  Seed the quadtree
-
-    for (let i: number = 0; i < world.bodies.length; i++)
-    {
-        quad.add(world.bodies[i].bounds);
-    }
-
-    for (let i: number = 0; i < world.bodies.length; i++)
-    {
-        let bodyA: Body = world.bodies[i];
-
-        let results = quad.getIntersections(bodyA.bounds);
-
-        console.log(bodyA.id, '=', results.length);
-
-        // for (let j: number = 0; j < results.length; j++)
-        // {
-        //     let bodyB: Body = results[j].body;
-
-        //     if (bodyA.id === bodyB.id || (bodyA.invMass === 0 && bodyB.invMass === 0))
-        //     {
-        //         continue;
-        //     }
-        // }
+let delta = 1 / 60;
+let iterations = 10;
+let gravity = new Vec2(0, 10);
+let width = 1280;
+let height = 720;
+let zoom = 30;
+let pan_x = 0;
+let pan_y = 8;
+let world = new World(width, height, gravity, iterations);
+function InitDemo(index) {
+    world.clear();
+    switch (index) {
+        case 1: {
+            Demo1();
+            break;
+        }
+        case 2: {
+            break;
+        }
+        case 3: {
+            break;
+        }
+        case 4: {
+            Demo4();
+            break;
+        }
     }
 }
-*/
-for (let i = 0; i < 200; i++) {
-    let box = new Body(8 + Math.random() * 32, 8 + Math.random() * 32, 1);
-    box.rotation = Math.random() * Math.PI;
-    box.position.set(100 + (Math.random() * (world.width - 200)), -1600 + Math.random() * 1600);
-    // box.position.set(400 - Math.random() * 100, 520 - (i * 40));
-    // box.friction = 1;
-    // box.fixedRotation = true;
-    world.addBody(box);
+//  Box2D Demos assume:
+//  0x0 = center of the world
+//  1 size unit = 1 px
+// Single box
+function Demo1() {
+    world.addBody(new Body(0, 0.5 * 20, 100, 20, Number.MAX_VALUE));
+    world.addBody(new Body(0, -4, 1, 1, 200));
 }
-//  Stack of boxes
-/*
-for (let i = 0; i < 16; i++)
-{
-    let box = new Body(new Vec2(32, 32), 1);
-
-    box.position.set(400, 520 - (i * 32));
-    box.friction = 0;
-    box.fixedRotation = true;
-    
-    world.addBody(box);
+// A vertical stack
+function Demo4() {
+    const floor = new Body(0, 0.5 * 20, 100, 20, Number.MAX_VALUE);
+    floor.friction = 0.2;
+    world.addBody(floor);
+    for (let i = 0; i < 10; i++) {
+        let b = new Body(Random(-0.1, 0.1), -(0.51 + 1.05 * i), 1, 1, 1);
+        b.friction = 0.2;
+        world.addBody(b);
+    }
 }
-*/
+InitDemo(4);
 let renderer = new CanvasRenderer(document.getElementById('demo'));
-renderer.showContacts = false;
+// renderer.showContacts = false;
 renderer.showBounds = false;
 let pause = false;
 let frame = 0;
 let frameText = document.getElementById('frame');
 let bodiesText = document.getElementById('bodies');
-let arbitersText = document.getElementById('arbiters');
+let jointsText = document.getElementById('joints');
 document.getElementById('pause').addEventListener('click', () => {
     pause = (pause) ? false : true;
 });
-window['arbitersTotal'] = 0;
-window['arbitersMerged'] = 0;
 window['world'] = world;
+// renderer.init(zoom);
 function loop() {
     if (!pause) {
         world.step(delta);
         // world.OLDstep(delta);
-        renderer.render(world);
+        renderer.render(world, zoom, pan_x, pan_y);
         frameText.value = frame.toString();
-        // bodiesText.value = world.bodies.length.toString();
-        // arbitersText.value = world.arbiters.length.toString();
-        bodiesText.value = world.arbiters.length.toString();
-        // bodiesText.value = window['arbitersMerged'].toString();
-        arbitersText.value = window['arbitersTotal'].toString();
+        bodiesText.value = world.bodies.length.toString();
+        jointsText.value = world.joints.length.toString();
         frame++;
     }
     requestAnimationFrame(loop);
