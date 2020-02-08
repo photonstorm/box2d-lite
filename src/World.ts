@@ -52,7 +52,7 @@ export default class World
         this.quadTree = new Quad(0, 0, this.width, this.height);
     }
 
-    addBody (body: Body): World
+    addBody (body: Body): Body
     {
         this.bodyIdSeed++;
 
@@ -60,14 +60,14 @@ export default class World
 
         this.bodies.push(body);
 
-        return this;
+        return body;
     }
 
-    addJoint (joint: Joint): World
+    addJoint (joint: Joint): Joint
     {
         this.joints.push(joint);
 
-        return this;
+        return joint;
     }
 
     clear (): World
