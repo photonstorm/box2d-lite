@@ -371,3 +371,9 @@ Finished the Teeter demo. It highlights the Arbiter issue even more clearly than
 
 Finally built the Dominos demo. Not convinced this is working the same as the C version, but it does actually work. Will need to build the C test app and compare them. Either way, it looks good :)
 
+![image](pages/dominos.png)
+
+All the demos are now created, other than friction coefficients (demo 3). Next step is to add a demo selection drop-down into the html, so we can easily swap between them all. After this is done, along with some toggles for various world settings, it's time to return to looking at the collision math.
+
+## v0.12.0
+
