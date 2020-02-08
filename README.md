@@ -308,7 +308,7 @@ Added `AABB.intersects` method, so you can pass another AABB and get a boolean b
 
 The values are approximate because it now only creates a new Arbiter if two bodies intersect, and as they're being spawned randomly, they don't always intersect at the same point. I could use a fixed position test to get exact stats back, but there's really no need - we've achieved the goal for this stage - and that's a whopping 98.6535% decrease in a test with 500 bodies. Taking us back up to a solid 60fps again.
 
-However, it's not all glory :) Bumping up to 1000 bodies makes the frame rate plummet again, as it's creating upwards of 4000 Arbiters per frame ~sigh~ .
+However, it's not all glory :) Bumping up to 1000 bodies makes the frame rate plummet again, as it's creating upwards of 4000 Arbiters per frame ~sigh~ - also, I've realised that we can't just eliminate Arbiters just if the bodies are no longer touching, so this implementation is actually not very stable.
 
 So, the naive broadphase is a big improvement, yet it's not enough if we want to scale this further. Time to break out a grid.
 
@@ -329,4 +329,21 @@ The alternative is a QuadTree, or similar data structure such as an R-Tree.
 Spent some time building in a QuadTree class and improving Arbiter collide calls. However, noticed a bug in the AABB Broadphase implementation that will require further investigation soon - as it causes bodies to slide up walls as arbiters are still running, when they should be dead.
 
 Will also see about stopping the creation of Arbiters and the passing in of new contacts.
+
+## v0.9.0
+
+Lots of refactoring now done. I fixed a bug in the AABB class causing NaN values, which in turn makes the QuadTree now work. I've also removed the need for an `ArbiterPair` class and the `ArbiterKey` class. This data is now held in the Arbiter class itself.
+
+I recoded the flow of the World.step quite a bit. There are two implementations, `OLDstep` and the new version, the old one being, well, the old one. Adding the AABB test, the QuadTree and the new flow results in much better performance than before. In the simulation, which spawns X bodies of random sizes across the world, in random locations, I'm now getting the following:
+
+| Total Bodies | Arbiters |
+|--------------|----------|
+| 10           | ~22      |
+| 100          | ~260     |
+| 200          | ~440     |
+| 500          | ~1050    |
+
+The Arbiter totals fluctate a bit, based on which bodies are in contact, and were taken when the bodies had all come to a rest, so are at least touching the floor, or stacked on-top of another body. The results are much better than without the AABB and QuadTree. 126,500 down to ~1050 created per frame is great and retains a good, smooth frame rate. This is with a heavily stacked test, too. If our World was a lot wider than 800px and the bodies were spread out over a much wider range, there would be even less Arbiters in total, giving us even better performance.
+
+The next thing to test is seeing how we can improve the Arbiter update math, as there is still a lot of transform calculations going on, which we can likely fast-exit from in various circumstances.
 
