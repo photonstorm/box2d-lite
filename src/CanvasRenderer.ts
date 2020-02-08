@@ -220,11 +220,17 @@ export default class CanvasRenderer
             position2.y + (this._M1.c * joint.localAnchor2.x + this._M1.d * joint.localAnchor2.y)
         );
         
+        ctx.strokeStyle = 'rgb(128, 128, 204)';
+        ctx.lineWidth = 0.5 / this.zoom;
+		ctx.setLineDash([ 2 / this.zoom, 2 / this.zoom ]);
+
         ctx.beginPath();
         ctx.moveTo(position1.x, position1.y);
         ctx.lineTo(p1.x, p1.y);
-        ctx.lineTo(position2.x, position2.y);
+        ctx.moveTo(position2.x, position2.y);
         ctx.lineTo(p2.x, p2.y);
         ctx.stroke();
+
+        ctx.setLineDash([]);
     }
 }
