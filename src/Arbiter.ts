@@ -26,8 +26,10 @@ export default class Arbiter
     contacts: Contact[];
     numContacts: number;
     friction: number;
+    id: string;
+    fresh: boolean;
 
-    constructor (world: World, body1: Body, body2: Body)
+    constructor (world: World, body1: Body, body2: Body, id: string)
     {
         this.world = world;
 
@@ -42,20 +44,39 @@ export default class Arbiter
             this.body2 = body1;
         }
 
-        this.contacts = [];
-        this.numContacts = 0;
-        this.friction = 0;
+        this.id = id;
 
-        if (this.stillActive())
-        {
-            this.numContacts = Collide(this.contacts, this.body1, this.body2);
-            this.friction = Math.sqrt(this.body1.friction * this.body2.friction);
-        }
+        this.contacts = [];
+
+        this.numContacts = Collide(this.contacts, this.body1, this.body2);
+
+        this.friction = Math.sqrt(this.body1.friction * this.body2.friction);
+
+        this.fresh = true;
     }
 
     stillActive (): boolean
     {
         return this.body1.bounds.intersects(this.body2.bounds);
+    }
+
+    //  Refresh this Arbiter - are the bodies still intersecting? If so, get the new contacts
+    refresh (): boolean
+    {
+        // if (this.stillActive())
+        // {
+            let newContacts = [];
+
+            let numNewContacts = Collide(newContacts, this.body1, this.body2);
+    
+            this.update(newContacts, numNewContacts);
+        // }
+        // else
+        // {
+        //     this.numContacts = 0;
+        // }
+
+        return (this.numContacts === 0);
     }
 
     update (newContacts: Contact[], numNewContacts: number)
@@ -111,7 +132,8 @@ export default class Arbiter
         this.numContacts = numNewContacts;
     }
 
-    preStep (inverseDelta: number)
+    //  return `true` if we should keep this Arbiter, or false if it's dead
+    preStep (inverseDelta: number): boolean
     {
         const allowedPenetration = this.world.allowedPenetration;
 
@@ -181,6 +203,8 @@ export default class Arbiter
                 }
             }
         }
+
+        return (numContacts > 0);
     }
 
     applyImpulse ()
@@ -292,5 +316,7 @@ export default class Arbiter
                 body2.angularVelocity += body2.invI * Vec2.crossXY(c.r2X, c.r2X, PnX, PnY);
             }
         }
+
+        this.fresh = false;
     }
 }
