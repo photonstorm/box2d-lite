@@ -40,14 +40,15 @@ export default class Body
 
     bounds: AABB;
 
-    constructor (width: number, height: number, mass: number)
+    constructor (x: number, y: number, width: number, height: number, mass: number)
     {
         this.bounds = new AABB(this);
 
-        this.set(width, height, mass);
+        this.position.set(x, y);
+        this.setSize(width, height, mass);
     }
 
-    set (width: number, height: number, mass: number): Body
+    setSize (width: number, height: number, mass: number): Body
     {
         this.width = width;
         this.height = height;
