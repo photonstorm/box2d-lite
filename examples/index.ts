@@ -11,6 +11,7 @@ let iterations = 10;
 let gravity = new Vec2(0, 10);
 
 let demoIndex = 0;
+const k_pi = 3.14159265358979323846264;
 
 let width = 1280;
 let height = 720;
@@ -119,6 +120,29 @@ function Demo1 ()
 // A simple pendulum
 function Demo2 ()
 {
+    /*
+    const b1 = world.addBody(new Body(0, 0.5 * 20, 100, 20, Number.MAX_VALUE));
+    const b2 = world.addBody(new Body(9, -11, 1, 1, 100));
+
+    let j = world.addJoint(new Joint());
+    j.set(world, b1, b2, new Vec2(0, -11));
+    */
+
+    world.addBody(new Body(0, 0.5 * 20, 100, 20, Number.MAX_VALUE));
+
+    const b1 = world.addBody(new Body(-2.5, -15, 1, 1, 100));
+    const b2 = world.addBody(new Body(2.5, -15, 1, 1, 100));
+
+    world.addBody(new Body(-2.5, -10, 8, 0.5, Number.MAX_VALUE));
+
+    let j = world.addJoint(new Joint());
+
+    //  x0 = the joint is in the middle space between the 2 bodies
+    //  x2 = the joint is near the right-hand body
+    //  x-2 = the joint is near the left-hand body
+    // j.set(world, b1, b2, new Vec2(-1, -15));
+    j.set(world, b1, b2, new Vec2(b1.position.x, b1.position.y));
+
 }
 
 // Varying friction coefficients
@@ -181,6 +205,68 @@ function Demo6 ()
 // A suspension bridge
 function Demo7 ()
 {
+    let b1 = world.addBody(new Body(0, 0.5 * 20, 100, 20, Number.MAX_VALUE));
+
+	const numPlanks = 15;
+    let mass = 50.0;
+    
+    let planks = [];
+
+	for (let i = 0; i < numPlanks; i++)
+	{
+        let p = world.addBody(new Body(-8.5 + 1.25 * i, -10, 1, 0.25, mass));
+
+        planks.push(p);
+    }
+
+	// Tuning
+	let frequencyHz = 2.0;
+	let dampingRatio = 0.7;
+
+	// frequency in radians
+	let omega = 2.0 * k_pi * frequencyHz;
+
+	// damping coefficient
+	let d = 2.0 * mass * dampingRatio * omega;
+
+	// spring stifness
+	let k = mass * omega * omega;
+
+	// magic formulas
+	let softness = 1.0 / (d + delta * k);
+    let biasFactor = delta * k / (d + delta * k);
+    
+    let j: Joint;
+
+	for (let i = 0; i < numPlanks - 1; i++)
+	{
+        let p1 = planks[i];
+        let p2 = planks[i + 1];
+
+        j = world.addJoint(new Joint());
+        j.set(world, p1, p2, new Vec2(p1.position.x + ((p2.position.x - p1.position.x) / 2), p1.position.y));
+        j.softness = softness;
+        j.biasFactor = biasFactor;
+
+        // console.log(j.)
+	}
+
+    j = world.addJoint(new Joint());
+    j.set(world, b1, planks[0], new Vec2(-9.125, -10));
+    j.softness = softness;
+    j.biasFactor = biasFactor;
+
+    j = world.addJoint(new Joint());
+    j.set(world, b1, planks[numPlanks - 1], new Vec2(-9.125 + 1.25 * numPlanks, -10));
+    j.softness = softness;
+    j.biasFactor = biasFactor;
+
+    //  Some random bodies
+    for (let i = 0; i < 20; i++)
+    {
+        world.addBody(new Body(Random(-8, 8), Random(-20, -30), 1, 1, 1));
+    }
+
 }
 
 // Dominos
@@ -226,9 +312,43 @@ function Demo8 ()
     j.set(world, b5, b6, new Vec2(7, -3.5));
 }
 
-// A multi-pendulum
+// A multi-pendulum (chain)
 function Demo9 ()
 {
+    let b1 = world.addBody(new Body(0, 0.5 * 20, 100, 20, Number.MAX_VALUE));
+
+    let mass = 10;
+
+    // Tuning
+	let frequencyHz = 4.;
+	let dampingRatio = 0.7;
+
+	// frequency in radians
+	let omega = 2.0 * k_pi * frequencyHz;
+
+	// damping coefficient
+	let d = 2.0 * mass * dampingRatio * omega;
+
+	// spring stiffness
+	let k = mass * omega * omega;
+
+	// magic formulas
+	let softness = 1.0 / (d + delta * k);
+	let biasFactor = delta * k / (d + delta * k);
+
+	const y = -16.0;
+
+    for (let i: number = 0; i < 15; i++)
+	{
+        let b = world.addBody(new Body(0.5 + i, y, 0.75, 0.25, mass));
+
+        let j: Joint = world.addJoint(new Joint());
+        j.set(world, b1, b, new Vec2(i, y));
+        j.softness = softness;
+        j.biasFactor = biasFactor;
+
+        b1 = b;
+    }
 }
 
 InitDemo(8);
