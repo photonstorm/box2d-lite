@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Phaser Box2D Lite</title>
+        <style>
+            body {
+                font-family: Verdana, Geneva, Tahoma, sans-serif;
+                font-size: smaller;
+            }
+
+            input[type=text] {
+                background-color: black;
+                color: #00ff00;
+                font-family: 'Courier New', Courier, monospace;
+                border: none;
+                padding: 4px;
+                margin: 1px 0;
+            }
+        </style>
+    </head>
+    <body>
+
+        <div style="margin-bottom: 16px;">
+            <button id="pause" style="margin-right: 32px">start</button>
+            frame: 
+            <input type="text" id="frame" value="0" style="width: 80px">
+            bodies:
+            <input type="text" id="bodies" value="0" style="width: 80px">
+            arbiters:
+            <input type="text" id="arbiters" value="0" style="width: 80px">
+        </div>
+
+        <canvas id="demo" width="800" height="600" style="border: 2px solid darkgray; margin-top: 16px">
+
+        <script src="index.js" type="module"></script>
+
+    </body>
+</html>
