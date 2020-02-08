@@ -14,7 +14,7 @@ let demoIndex = 0;
 
 let width = 1280;
 let height = 720;
-let zoom = 30;
+let zoom = 20;
 let pan_x = 0;
 let pan_y = 8;
 let bomb: Body;
@@ -108,10 +108,6 @@ function InitDemo (index: number)
 
 }
 
-//  Box2D Demos assume:
-//  0x0 = center of the world
-//  1 size unit = 1 px
-
 // Single box
 function Demo1 ()
 {
@@ -133,11 +129,7 @@ function Demo3 ()
 // A vertical stack
 function Demo4 ()
 {
-    const floor = new Body(0, 0.5 * 20, 100, 20, Number.MAX_VALUE);
-
-    floor.friction = 0.2;
-
-    world.addBody(floor);
+    world.addBody(new Body(0, 0.5 * 20, 100, 20, Number.MAX_VALUE));
 
     for (let i: number = 0; i < 10; i++)
     {
@@ -150,6 +142,26 @@ function Demo4 ()
 // A pyramid
 function Demo5 ()
 {
+    world.addBody(new Body(0, 0.5 * 20, 100, 20, Number.MAX_VALUE));
+
+    let x = new Vec2(-6, -0.75);
+    let y = new Vec2();
+
+    for (let i: number = 0; i < 12; i++)
+    {
+        //  y = x
+        y.set(x.x, x.y);
+
+        for (let j: number = i; j < 12; j++)
+        {
+            world.addBody(new Body(y.x, y.y, 1, 1, 10));
+
+            y.x += 1.125;
+        }
+
+        x.x += 0.5625;
+        x.y -= 2;
+    }
 }
 
 // A teeter
@@ -172,7 +184,7 @@ function Demo9 ()
 {
 }
 
-InitDemo(4);
+InitDemo(5);
 
 let renderer = new CanvasRenderer(document.getElementById('demo') as HTMLCanvasElement);
 

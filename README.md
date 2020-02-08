@@ -357,4 +357,10 @@ I've also renamed `Body.set` to `Body.setSize`, as that is what it does.
 
 While working through creating the demos I've added some features into the Canvas Renderer. First, you can set the zoom during render. You can also now pan the camera, too. This allows the renderer to be controlled freely from the demo, rather than being fixed in place. The shapes being drawn have their line widths scaled accordingly. Also removed a path call and swapped for a `strokeRect` call.
 
+So far, I've created the Single Box, Vertical Stack and Pyramid demos.
+
+![image](pages/pyramid.png)
+
+Interestingly, running the pyramid demo with the new World step causes bodies to fall off the top. Using the old World step and they're a lot more solid. It appears more work is required in the QuadTree approach, as Arbiters are being eliminated too early, or (more likely) not being created because there is no previous intersection, where-as they really should have been.
+
 
