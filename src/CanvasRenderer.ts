@@ -69,7 +69,8 @@ export default class CanvasRenderer
         {
             for (let i = 0; i < arbiters.length; i++)
             {
-                let arbiter = arbiters[i].second;
+                // let arbiter = arbiters[i].second;
+                let arbiter = arbiters[i];
     
                 for (let c = 0; c < arbiter.contacts.length; c++)
                 {
