@@ -347,3 +347,14 @@ The Arbiter totals fluctate a bit, based on which bodies are in contact, and wer
 
 The next thing to test is seeing how we can improve the Arbiter update math, as there is still a lot of transform calculations going on, which we can likely fast-exit from in various circumstances.
 
+## v0.10.0
+
+Another day, another approach. The first thing to do today is create some more tests. I'll do this by porting those Erin created for the original Box2D Lite. It will give a variety of good test cases, which are easier to get stats from.
+
+While doing this I've decided to modify the Body constructor signature a little, so you can pass in an x and y position for the body if you wish. I'm struggling to think of a case when you wouldn't need it, so it'll make the demo code cleaner:
+
+I've also renamed `Body.set` to `Body.setSize`, as that is what it does.
+
+While working through creating the demos I've added some features into the Canvas Renderer. First, you can set the zoom during render. You can also now pan the camera, too. This allows the renderer to be controlled freely from the demo, rather than being fixed in place. The shapes being drawn have their line widths scaled accordingly. Also removed a path call and swapped for a `strokeRect` call.
+
+
