@@ -15,6 +15,8 @@ export default class CanvasRenderer
     showContacts: boolean = true;
     showJoints: boolean = true;
 
+    zoom: number = 1;
+
     private _M0: Mat22;
     private _M1: Mat22;
 
@@ -40,14 +42,41 @@ export default class CanvasRenderer
         this._orientation = new Vec2();
     }
 
-    render (world: World)
+    init (zoom: number)
+    {
+        const context = this.context;
+
+        context.setTransform();
+        context.translate(this.canvas.width / 2, this.canvas.height / 2);
+        context.scale(zoom, zoom);
+
+        this.zoom = zoom;
+    }
+
+    render (world: World, zoom: number = 1, panX: number = 0, panY: number = 0)
     {
         const context = this.context;
         const bodies = world.bodies;
         const joints = world.joints;
         const arbiters = world.arbiters;
 
-        context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        //  Set the scale and pan
+
+        const w = this.canvas.width;
+        const h = this.canvas.height;
+
+        context.setTransform();
+        context.clearRect(0, 0, w, h);
+
+        //  center it
+        context.translate(w / 2, h / 2);
+
+        //  pan it
+        context.translate(panX * zoom, panY * zoom);
+
+        context.scale(zoom, zoom);
+
+        this.zoom = zoom;
   
         if (this.showBodies)
         {
@@ -91,11 +120,8 @@ export default class CanvasRenderer
     renderBodyBounds (body: Body, ctx: CanvasRenderingContext2D)
     {
         ctx.strokeStyle = 'grey';
-        ctx.lineWidth = 0.5;
-
-        ctx.beginPath();
-        ctx.rect(body.bounds.x1, body.bounds.y1, body.bounds.width, body.bounds.height);
-        ctx.stroke();
+        ctx.lineWidth = 0.5 / this.zoom;
+        ctx.strokeRect(body.bounds.x1, body.bounds.y1, body.bounds.width, body.bounds.height);
     }
 
     renderBody (body: Body, ctx: CanvasRenderingContext2D)
@@ -141,9 +167,9 @@ export default class CanvasRenderer
         
         // draw centroid of rectangle
         ctx.strokeStyle = 'black';
-        ctx.lineWidth = 0.5;
+        ctx.lineWidth = 0.5 / this.zoom;
         ctx.beginPath();
-        ctx.arc(body.position.x, body.position.y, 2, 0, 2 * Math.PI);
+        ctx.arc(body.position.x, body.position.y, 2 / this.zoom, 0, 2 * Math.PI);
 
         // draw shape
         ctx.moveTo(v1.x, v1.y);
@@ -163,10 +189,10 @@ export default class CanvasRenderer
     renderContact (contact: Contact, ctx: CanvasRenderingContext2D)
     {
         ctx.strokeStyle = 'red';
-        ctx.lineWidth = 0.5;
+        ctx.lineWidth = 0.5 / this.zoom;
 
         ctx.beginPath();
-        ctx.arc(contact.positionX, contact.positionY, 2, 0, 2 * Math.PI);
+        ctx.arc(contact.positionX, contact.positionY, 2 / this.zoom, 0, 2 * Math.PI);
         ctx.stroke();
     }
 
