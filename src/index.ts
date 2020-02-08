@@ -5,7 +5,7 @@ import CanvasRenderer from './CanvasRenderer';
 import Quad from './Quad';
 import Joint from './Joint';
 import World from './World';
-import Vec2 from './math/Vec2';
+import * as Math from './math/index';
 
 export {
     Body,
@@ -13,5 +13,5 @@ export {
     Quad,
     Joint,
     World,
-    Vec2
+    Math
 };
