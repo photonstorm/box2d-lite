@@ -76,6 +76,9 @@ export default class World
         this.joints = [];
         this.arbiters = [];
 
+        this.quadTree.clear();
+        this.bodyIdSeed = 0;
+
         return this;
     }
 

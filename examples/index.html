@@ -20,14 +20,37 @@
     </head>
     <body>
 
-        <div style="margin-bottom: 16px;">
-            <button id="pause" style="margin-right: 32px">start</button>
+        <div>
+            <select id="demolist">
+                <option value="1">Demo 1: A Single Box</option>
+                <option value="2">Demo 2: Simple Pendulum</option>
+                <option value="3">Demo 3: Varying Friction Coefficients</option>
+                <option value="4">Demo 4: Randomized Stacking</option>
+                <option value="5">Demo 5: Pyramid Stacking</option>
+                <option value="6">Demo 6: A Teeter</option>
+                <option value="7">Demo 7: A Suspension Bridge</option>
+                <option value="8">Demo 8: Dominos</option>
+                <option value="9">Demo 9: Multi-pendulum</option>
+            </select>
+            <button id="pause" style="margin-right: 32px; width: 80px">pause</button>
             frame: 
             <input type="text" id="frame" value="0" style="width: 80px">
             bodies:
             <input type="text" id="bodies" value="0" style="width: 80px">
             joints:
             <input type="text" id="joints" value="0" style="width: 80px">
+        </div>
+        <div style="margin-bottom: 16px">
+            Render: 
+            <input type="checkbox" id="showBounds" name="showBounds" value="0"><label for="showBounds">Bounds</label>
+            <input type="checkbox" id="showContacts" name="showContacts" value="1" checked><label for="showContacts">Contacts</label>
+            <input type="checkbox" id="showJoints" name="showJoints" value="1" checked><label for="showJoints">Joints</label>
+            <input type="checkbox" id="showBodies" name="showBodies" value="1" checked><label for="showBodies">Bodies</label>
+
+            <input type="range" min="1" max="60" value="30" id="zoom"> Zoom
+            <input type="range" min="-50" max="50" value="0" id="panH"> Pan H
+            <input type="range" min="-50" max="50" value="8" id="panV"> Pan V
+
         </div>
 
         <canvas id="demo" width="800" height="600" style="border: 2px solid darkgray; margin-top: 16px">

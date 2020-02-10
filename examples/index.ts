@@ -10,7 +10,8 @@ let delta = 1 / 60;
 let iterations = 10;
 let gravity = new Vec2(0, 10);
 
-let demoIndex = 0;
+let demoIndex = 1;
+
 const k_pi = 3.14159265358979323846264;
 
 let width = 1280;
@@ -20,19 +21,9 @@ let pan_x = 0;
 let pan_y = 8;
 let bomb: Body;
 
-const demoStrings = [
-	"Demo 1: A Single Box",
-	"Demo 2: Simple Pendulum",
-	"Demo 3: Varying Friction Coefficients",
-	"Demo 4: Randomized Stacking",
-	"Demo 5: Pyramid Stacking",
-	"Demo 6: A Teeter",
-	"Demo 7: A Suspension Bridge",
-	"Demo 8: Dominos",
-    "Demo 9: Multi-pendulum"
-];
-
 let world = new World(width, height, gravity, iterations);
+
+window['world'] = world;
 
 function LaunchBomb ()
 {
@@ -56,6 +47,7 @@ function InitDemo (index: number)
 {
     world.clear();
     bomb = null;
+    frame = 0;
 
     demoIndex = index;
 
@@ -351,8 +343,6 @@ function Demo9 ()
     }
 }
 
-InitDemo(8);
-
 let renderer = new CanvasRenderer(document.getElementById('demo') as HTMLCanvasElement);
 
 // renderer.showContacts = false;
@@ -361,19 +351,74 @@ renderer.showBounds = false;
 let pause = false;
 let frame = 0;
 
-let frameText = document.getElementById('frame') as HTMLFormElement;
-let bodiesText = document.getElementById('bodies') as HTMLFormElement;
-let jointsText = document.getElementById('joints') as HTMLFormElement;
+InitDemo(1);
 
-document.getElementById('pause').addEventListener('click', () => {
+let demoList = document.getElementById('demolist');
 
-    pause = (pause) ? false : true;
+demoList.addEventListener('change', (e) => {
+
+    let target = e.target as HTMLFormElement ;
+
+    demoIndex = parseInt(target.value);
+
+    InitDemo(demoIndex);
 
 });
 
-window['world'] = world;
+let frameText = document.getElementById('frame') as HTMLFormElement;
+let bodiesText = document.getElementById('bodies') as HTMLFormElement;
+let jointsText = document.getElementById('joints') as HTMLFormElement;
+let pauseButton = document.getElementById('pause') as HTMLFormElement;
+let boundsToggle = document.getElementById('showBounds') as HTMLFormElement;
+let contactsToggle = document.getElementById('showContacts') as HTMLFormElement;
+let jointsToggle = document.getElementById('showJoints') as HTMLFormElement;
+let bodiesToggle = document.getElementById('showBodies') as HTMLFormElement;
+let zoomRange = document.getElementById('zoom') as HTMLFormElement;
+let panHRange = document.getElementById('panH') as HTMLFormElement;
+let panVRange = document.getElementById('panV') as HTMLFormElement;
 
-// renderer.init(zoom);
+boundsToggle.addEventListener('change', () => {
+    renderer.showBounds = boundsToggle.checked;
+});
+
+contactsToggle.addEventListener('change', () => {
+    renderer.showContacts = contactsToggle.checked;
+});
+
+jointsToggle.addEventListener('change', () => {
+    renderer.showJoints = jointsToggle.checked;
+});
+
+bodiesToggle.addEventListener('change', () => {
+    renderer.showBodies = bodiesToggle.checked;
+});
+
+zoomRange.addEventListener('input', () => {
+    zoom = zoomRange.valueAsNumber;
+});
+
+panHRange.addEventListener('input', () => {
+    pan_x = panHRange.valueAsNumber;
+});
+
+panVRange.addEventListener('input', () => {
+    pan_y = panVRange.valueAsNumber;
+});
+
+pauseButton.addEventListener('click', () => {
+
+    if (pause)
+    {
+        pauseButton.innerText = 'pause';
+        pause = false;
+    }
+    else
+    {
+        pauseButton.innerText = 'play';
+        pause = true;
+    }
+
+});
 
 function loop ()
 {
@@ -382,14 +427,14 @@ function loop ()
         // world.step(delta);
         world.OLDstep(delta);
 
-        renderer.render(world, zoom, pan_x, pan_y);
-
         frameText.value = frame.toString();
         bodiesText.value = world.bodies.length.toString();
         jointsText.value = world.joints.length.toString();
 
         frame++;
     }
+
+    renderer.render(world, zoom, pan_x, pan_y);
 
     requestAnimationFrame(loop);
 }
