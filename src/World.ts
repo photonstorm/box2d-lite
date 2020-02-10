@@ -245,7 +245,7 @@ export default class World
                     continue;
                 }
 
-                let key: string = bodyA.id + ':' + bodyB.id;
+                let key: string = (bodyA.id < bodyB.id) ? bodyA.id + ':' + bodyB.id : bodyB.id + ':' + bodyA.id;
 
                 let foundPair: boolean = false;
 

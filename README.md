@@ -377,3 +377,7 @@ All the demos are now created, other than friction coefficients (demo 3). Next s
 
 ## v0.12.0
 
+A drop-down list of the various demos has been added, so it's easy to swap between them instantly now. Also added toggles for the various rendering flags and zoom and pan controls.
+
+Fixed the issue with the new World step. It was creating double the amount of Arbiters required. Put the ID sort back in again and now it creates the same number as the C version. These are just the persistent arbiters, not disposable ones per frame. With this in place the simulations are now stable between each other, so it's time to revisit the math again.
+

@@ -1687,7 +1687,7 @@ class World {
                 if (bodyA.id === bodyB.id || (bodyA.invMass === 0 && bodyB.invMass === 0)) {
                     continue;
                 }
-                let key = bodyA.id + ':' + bodyB.id;
+                let key = (bodyA.id < bodyB.id) ? bodyA.id + ':' + bodyB.id : bodyB.id + ':' + bodyA.id;
                 let foundPair = false;
                 for (let a = 0; a < arbiters.length; a++) {
                     //  We have an arbiter for this body pair already
@@ -1781,6 +1781,7 @@ let delta = 1 / 60;
 let iterations = 10;
 let gravity = new Vec2(0, 10);
 let demoIndex = 1;
+let oldStep = false;
 const k_pi = 3.14159265358979323846264;
 let width = 1280;
 let height = 720;
@@ -2000,6 +2001,8 @@ demoList.addEventListener('change', (e) => {
     let target = e.target;
     demoIndex = parseInt(target.value);
     InitDemo(demoIndex);
+    pauseButton.innerText = 'play';
+    pause = true;
 });
 let frameText = document.getElementById('frame');
 let bodiesText = document.getElementById('bodies');
@@ -2012,6 +2015,7 @@ let bodiesToggle = document.getElementById('showBodies');
 let zoomRange = document.getElementById('zoom');
 let panHRange = document.getElementById('panH');
 let panVRange = document.getElementById('panV');
+let stepButton = document.getElementById('stepType');
 boundsToggle.addEventListener('change', () => {
     renderer.showBounds = boundsToggle.checked;
 });
@@ -2043,16 +2047,30 @@ pauseButton.addEventListener('click', () => {
         pause = true;
     }
 });
+stepButton.addEventListener('click', () => {
+    if (oldStep) {
+        stepButton.innerText = 'NEW';
+        oldStep = false;
+    }
+    else {
+        stepButton.innerText = 'OLD';
+        oldStep = true;
+    }
+});
 function loop() {
     if (!pause) {
-        // world.step(delta);
-        world.OLDstep(delta);
-        frameText.value = frame.toString();
-        bodiesText.value = world.bodies.length.toString();
-        jointsText.value = world.joints.length.toString();
+        if (oldStep) {
+            world.OLDstep(delta);
+        }
+        else {
+            world.step(delta);
+        }
         frame++;
     }
     renderer.render(world, zoom, pan_x, pan_y);
+    frameText.value = frame.toString();
+    bodiesText.value = world.bodies.length.toString();
+    jointsText.value = world.joints.length.toString();
     requestAnimationFrame(loop);
 }
 loop();

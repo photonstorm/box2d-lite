@@ -11,6 +11,7 @@ let iterations = 10;
 let gravity = new Vec2(0, 10);
 
 let demoIndex = 1;
+let oldStep = false;
 
 const k_pi = 3.14159265358979323846264;
 
@@ -363,6 +364,9 @@ demoList.addEventListener('change', (e) => {
 
     InitDemo(demoIndex);
 
+    pauseButton.innerText = 'play';
+    pause = true;
+
 });
 
 let frameText = document.getElementById('frame') as HTMLFormElement;
@@ -376,6 +380,8 @@ let bodiesToggle = document.getElementById('showBodies') as HTMLFormElement;
 let zoomRange = document.getElementById('zoom') as HTMLFormElement;
 let panHRange = document.getElementById('panH') as HTMLFormElement;
 let panVRange = document.getElementById('panV') as HTMLFormElement;
+
+let stepButton = document.getElementById('stepType') as HTMLFormElement;
 
 boundsToggle.addEventListener('change', () => {
     renderer.showBounds = boundsToggle.checked;
@@ -420,21 +426,42 @@ pauseButton.addEventListener('click', () => {
 
 });
 
+stepButton.addEventListener('click', () => {
+
+    if (oldStep)
+    {
+        stepButton.innerText = 'NEW';
+        oldStep = false;
+    }
+    else
+    {
+        stepButton.innerText = 'OLD';
+        oldStep = true;
+    }
+
+});
+
 function loop ()
 {
     if (!pause)
     {
-        // world.step(delta);
-        world.OLDstep(delta);
-
-        frameText.value = frame.toString();
-        bodiesText.value = world.bodies.length.toString();
-        jointsText.value = world.joints.length.toString();
+        if (oldStep)
+        {
+            world.OLDstep(delta);
+        }
+        else
+        {
+            world.step(delta);
+        }
 
         frame++;
     }
 
     renderer.render(world, zoom, pan_x, pan_y);
+
+    frameText.value = frame.toString();
+    bodiesText.value = world.bodies.length.toString();
+    jointsText.value = world.joints.length.toString();
 
     requestAnimationFrame(loop);
 }
